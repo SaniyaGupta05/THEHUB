@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../constants/config';
+import { API_BASE_URL, DEMO_CUSTOMERS } from '../constants/config';
 import {
   Product,
   Collection,
@@ -423,6 +423,100 @@ class ApiClient {
         is_demo: true,
       };
       return Promise.resolve(fakeOrder as unknown as T);
+    }
+
+    if (endpoint.includes('/orders')) {
+      const demoOrders: Order[] = isGold
+        ? [
+            {
+              id: 'ord_demo_01',
+              order_number: 'HUB-2026-94812',
+              customer_id: cid,
+              items: [
+                {
+                  product_id: 'prod_01',
+                  variant_id: 'var_01',
+                  product_title: 'Embroidered Velvet Sherwani',
+                  quantity: 1,
+                  unit_price: 68000,
+                  total_price: 68000,
+                },
+              ],
+              subtotal: 68000,
+              tax: 0,
+              shipping: 0,
+              discount_amount: 3450,
+              points_redeemed: 3450,
+              points_earned_estimated: 4080,
+              total_amount: 64550,
+              status: 'Delivered',
+              shipping_address: {
+                full_name: 'Aarav Patel',
+                phone: '+91 98250 12345',
+                street: '14 Alkapuri Chambers, R.C. Dutt Road',
+                city: 'Vadodara',
+                state: 'Gujarat',
+                pincode: '390007',
+                country: 'India',
+              },
+              created_at: '2026-04-18T18:10:00Z',
+              is_demo: true,
+            },
+          ]
+        : [];
+      return Promise.resolve(demoOrders as unknown as T);
+    }
+
+    if (endpoint.includes('/register')) {
+      let body: any = {};
+      try {
+        body = options.body ? JSON.parse(options.body as string) : {};
+      } catch {}
+      const newCust: CustomerProfile = {
+        id: `cust_${Date.now()}`,
+        first_name: body.first_name || 'Member',
+        last_name: body.last_name || '',
+        email: body.email || 'customer@thehub.in',
+        phone: body.phone || '+91 98765 43210',
+        member_since: new Date().toISOString(),
+        is_hubklub_member: true,
+        membership_number: `HK-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+        tier: 'Classic',
+        max_single_purchase: 0,
+        annual_spend_current_year: 0,
+        lifetime_spend: 0,
+        saved_addresses: [],
+      };
+      return Promise.resolve(newCust as unknown as T);
+    }
+
+    if (endpoint.includes('/login')) {
+      let body: any = {};
+      try {
+        body = options.body ? JSON.parse(options.body as string) : {};
+      } catch {}
+      const idOrEmail = (body.identifier || '').toLowerCase();
+      const demoFound = DEMO_CUSTOMERS.find(
+        (c) => c.id === idOrEmail || c.name.toLowerCase().includes(idOrEmail)
+      );
+      const chosenId = demoFound ? demoFound.id : 'cust_demo';
+      const isChosenGold = chosenId === 'cust_demo';
+      const profile: CustomerProfile = {
+        id: chosenId,
+        first_name: demoFound ? demoFound.name.split(' ')[0] : 'Aarav',
+        last_name: demoFound ? demoFound.name.split(' ').slice(1, 2).join(' ') : 'Patel',
+        email: `${chosenId}@thehub.in`,
+        phone: '+91 98250 12345',
+        member_since: '2024-03-15T10:00:00Z',
+        is_hubklub_member: true,
+        membership_number: isChosenGold ? 'HK-2024-88412' : 'HK-2025-10294',
+        tier: isChosenGold ? 'Gold' : 'Classic',
+        max_single_purchase: isChosenGold ? 32900 : 15000,
+        annual_spend_current_year: isChosenGold ? 115595 : 45000,
+        lifetime_spend: isChosenGold ? 178000 : 45000,
+        saved_addresses: [],
+      };
+      return Promise.resolve(profile as unknown as T);
     }
 
     return Promise.resolve({} as unknown as T);

@@ -59,9 +59,10 @@ export const AccountScreen: React.FC = () => {
     const fetchOrders = async () => {
       try {
         const data = await apiClient.getOrders();
-        setOrders(data);
+        setOrders(Array.isArray(data) ? data : []);
       } catch (e) {
         console.warn('Failed to load orders', e);
+        setOrders([]);
       }
     };
     fetchOrders();
@@ -126,19 +127,22 @@ export const AccountScreen: React.FC = () => {
   };
 
   const displayName = !isGuest && customerProfile
-    ? `${customerProfile.first_name} ${customerProfile.last_name}`
+    ? `${customerProfile.first_name || ''} ${customerProfile.last_name || ''}`.trim() || 'Valued Member'
     : 'Guest Shopper';
   const displayEmail = !isGuest && customerProfile?.email
     ? customerProfile.email
     : 'Sign in or create account to access orders & HUBKLUB points';
   const initials = !isGuest && customerProfile
-    ? `${customerProfile.first_name[0] || ''}${customerProfile.last_name[0] || ''}`.toUpperCase() || 'JD'
+    ? `${customerProfile?.first_name?.[0] || ''}${customerProfile?.last_name?.[0] || ''}`.toUpperCase() || 'HB'
     : '';
 
-  const filteredOrders = orders.filter((ord) => {
+  const safeOrders = Array.isArray(orders) ? orders : [];
+  const filteredOrders = safeOrders.filter((ord) => {
+    if (!ord) return false;
+    const status = (ord.status || '').toLowerCase();
     if (orderFilter === 'All') return true;
-    if (orderFilter === 'Delivered') return ord.status.toLowerCase().includes('delivered') || ord.status.toLowerCase().includes('confirmed');
-    if (orderFilter === 'Processing') return ord.status.toLowerCase().includes('processing') || ord.status.toLowerCase().includes('shipped');
+    if (orderFilter === 'Delivered') return status.includes('delivered') || status.includes('confirmed');
+    if (orderFilter === 'Processing') return status.includes('processing') || status.includes('shipped');
     return true;
   });
 
