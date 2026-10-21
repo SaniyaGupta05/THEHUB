@@ -14,6 +14,8 @@ import {
 class ApiClient {
   private customerId: string = 'cust_demo';
   private customProfiles: Map<string, CustomerProfile> = new Map();
+  private customOrders: Map<string, Order[]> = new Map();
+  private customerPoints: Map<string, number> = new Map();
 
   setCustomerId(id: string) {
     this.customerId = id;
@@ -21,6 +23,33 @@ class ApiClient {
 
   getCustomerId(): string {
     return this.customerId;
+  }
+
+  recordOrder(order: Order) {
+    const cid = order.customer_id || this.customerId;
+    const list = this.customOrders.get(cid) || [];
+    // Prevent duplicate entries
+    if (!list.some((o) => o.id === order.id || o.order_number === order.order_number)) {
+      this.customOrders.set(cid, [order, ...list]);
+    }
+
+    // Calculate and award points
+    const earned = order.points_earned_estimated || Math.round(order.total_amount * 0.05);
+    const redeemed = order.points_redeemed || 0;
+    const current = this.customerPoints.get(cid) ?? (cid === 'cust_demo' ? 3450 : cid === 'cust_below_bonus' ? 1350 : 100);
+    const updated = Math.max(0, current - redeemed + earned);
+    this.customerPoints.set(cid, updated);
+
+    // Update customer profile spend if custom
+    if (this.customProfiles.has(cid)) {
+      const p = this.customProfiles.get(cid)!;
+      p.annual_spend_current_year += order.total_amount;
+      p.lifetime_spend += order.total_amount;
+    }
+  }
+
+  getPointsBalance(cid: string): number {
+    return this.customerPoints.get(cid) ?? (cid === 'cust_demo' ? 3450 : cid === 'cust_below_bonus' ? 1350 : 100);
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -426,10 +455,15 @@ class ApiClient {
         created_at: new Date().toISOString(),
         is_demo: true,
       };
+      this.recordOrder(fakeOrder);
       return Promise.resolve(fakeOrder as unknown as T);
     }
 
     if (endpoint.includes('/orders')) {
+      const recorded = this.customOrders.get(cid);
+      if (recorded && recorded.length > 0) {
+        return Promise.resolve(recorded as unknown as T);
+      }
       const demoOrders: Order[] = isGold
         ? [
             {
@@ -501,35 +535,146 @@ class ApiClient {
       try {
         body = options.body ? JSON.parse(options.body as string) : {};
       } catch {}
-      const idOrEmail = (body.identifier || '').toLowerCase();
+      const idOrEmail = (body.identifier || '').toLowerCase().trim();
+      const rawDigits = idOrEmail.replace(/\D/g, '');
+
+      // Check registered custom profiles
       if (this.customProfiles.has(idOrEmail)) {
-        return Promise.resolve(this.customProfiles.get(idOrEmail) as unknown as T);
+        const found = this.customProfiles.get(idOrEmail)!;
+        this.setCustomerId(found.id);
+        return Promise.resolve(found as unknown as T);
       }
       for (const [_, p] of this.customProfiles) {
-        if (p.email.toLowerCase() === idOrEmail || p.phone.includes(idOrEmail)) {
+        const pDigits = (p.phone || '').replace(/\D/g, '');
+        if (
+          p.email.toLowerCase() === idOrEmail ||
+          p.id.toLowerCase() === idOrEmail ||
+          (rawDigits.length >= 4 && pDigits.includes(rawDigits))
+        ) {
+          this.setCustomerId(p.id);
           return Promise.resolve(p as unknown as T);
         }
       }
-      const demoFound = DEMO_CUSTOMERS.find(
-        (c) => c.id === idOrEmail || c.name.toLowerCase().includes(idOrEmail)
-      );
-      const chosenId = demoFound ? demoFound.id : 'cust_demo';
-      const isChosenGold = chosenId === 'cust_demo';
-      const profile: CustomerProfile = {
-        id: chosenId,
-        first_name: demoFound ? demoFound.name.split(' ')[0] : 'Aarav',
-        last_name: demoFound ? demoFound.name.split(' ').slice(1, 2).join(' ') : 'Patel',
-        email: `${chosenId}@thehub.in`,
-        phone: '+91 98250 12345',
-        member_since: '2024-03-15T10:00:00Z',
-        is_hubklub_member: true,
-        membership_number: isChosenGold ? 'HK-2024-88412' : 'HK-2025-10294',
-        tier: isChosenGold ? 'Gold' : 'Classic',
-        max_single_purchase: isChosenGold ? 32900 : 15000,
-        annual_spend_current_year: isChosenGold ? 115595 : 45000,
-        lifetime_spend: isChosenGold ? 178000 : 45000,
-        saved_addresses: [],
-      };
+
+      // Dataset customers from database (hubklub_app.db)
+      const datasetProfiles: CustomerProfile[] = [
+        {
+          id: 'cust_demo',
+          first_name: 'Aarav',
+          last_name: 'Patel',
+          email: 'aarav.patel@example.com',
+          phone: '+91 98250 12345',
+          member_since: '2024-03-15T10:00:00Z',
+          is_hubklub_member: true,
+          membership_number: 'HK-2024-88412',
+          tier: 'Gold',
+          max_single_purchase: 32900,
+          annual_spend_current_year: 115595,
+          lifetime_spend: 178000,
+          saved_addresses: [
+            {
+              full_name: 'Aarav Patel',
+              phone: '+91 98250 12345',
+              street: '14 Alkapuri Chambers, R.C. Dutt Road',
+              city: 'Vadodara',
+              state: 'Gujarat',
+              pincode: '390007',
+              country: 'India',
+            },
+          ],
+        },
+        {
+          id: 'cust_below_bonus',
+          first_name: 'Dev',
+          last_name: 'Desai',
+          email: 'dev.desai@example.com',
+          phone: '+91 98765 43210',
+          member_since: '2025-01-10T10:00:00Z',
+          is_hubklub_member: true,
+          membership_number: 'HK-2025-10294',
+          tier: 'Classic',
+          max_single_purchase: 15000,
+          annual_spend_current_year: 45000,
+          lifetime_spend: 45000,
+          saved_addresses: [
+            {
+              full_name: 'Dev Desai',
+              phone: '+91 98765 43210',
+              street: '8 Race Course Road, Opp. Inox',
+              city: 'Vadodara',
+              state: 'Gujarat',
+              pincode: '390007',
+              country: 'India',
+            },
+          ],
+        },
+        {
+          id: 'cust_eligible',
+          first_name: 'Vikram',
+          last_name: 'Mehta',
+          email: 'vikram.mehta@example.com',
+          phone: '+91 97240 55443',
+          member_since: '2026-02-01T10:00:00Z',
+          is_hubklub_member: true,
+          membership_number: 'HK-2026-0DE79',
+          tier: 'Classic',
+          max_single_purchase: 15195,
+          annual_spend_current_year: 15195,
+          lifetime_spend: 15195,
+          saved_addresses: [
+            {
+              full_name: 'Vikram Mehta',
+              phone: '+91 97240 55443',
+              street: '22 Sampatrao Colony, Alkapuri',
+              city: 'Vadodara',
+              state: 'Gujarat',
+              pincode: '390007',
+              country: 'India',
+            },
+          ],
+        },
+        {
+          id: 'cust_ineligible',
+          first_name: 'Rohan',
+          last_name: 'Shah',
+          email: 'rohan.shah@example.com',
+          phone: '+91 98980 99887',
+          member_since: '2026-03-01T10:00:00Z',
+          is_hubklub_member: false,
+          membership_number: undefined,
+          tier: 'Classic',
+          max_single_purchase: 850,
+          annual_spend_current_year: 850,
+          lifetime_spend: 850,
+          saved_addresses: [
+            {
+              full_name: 'Rohan Shah',
+              phone: '+91 98980 99887',
+              street: '5 Sayajigunj Tower',
+              city: 'Vadodara',
+              state: 'Gujarat',
+              pincode: '390005',
+              country: 'India',
+            },
+          ],
+        },
+      ];
+
+      // Match by ID, email, membership number, name, or phone digits
+      const matched = datasetProfiles.find((p) => {
+        const pDigits = p.phone.replace(/\D/g, '');
+        return (
+          p.id.toLowerCase() === idOrEmail ||
+          p.email.toLowerCase() === idOrEmail ||
+          (p.membership_number && p.membership_number.toLowerCase() === idOrEmail) ||
+          p.first_name.toLowerCase() === idOrEmail ||
+          `${p.first_name} ${p.last_name}`.toLowerCase() === idOrEmail ||
+          (rawDigits.length >= 4 && pDigits.includes(rawDigits))
+        );
+      });
+
+      const profile = matched || datasetProfiles[0];
+      this.setCustomerId(profile.id);
       return Promise.resolve(profile as unknown as T);
     }
 

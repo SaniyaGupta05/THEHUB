@@ -21,9 +21,9 @@ function resolveApiBaseUrl(): string {
     }
   }
 
-  // 3. Fallback for Android emulator vs Web/iOS simulator
+  // 3. Fallback for physical devices on local Wi-Fi vs Android emulator
   return Platform.select({
-    android: 'http://10.0.2.2:8000/api/v1',
+    android: 'http://192.168.1.47:8000/api/v1',
     default: 'http://localhost:8000/api/v1',
   });
 }

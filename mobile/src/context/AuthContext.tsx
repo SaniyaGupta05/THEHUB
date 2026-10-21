@@ -46,7 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (balance.status === 'fulfilled' && balance.value) {
         setPointsBalance(balance.value.available_points);
       } else {
-        setPointsBalance(id === 'cust_demo' ? 3450 : id === 'cust_below_bonus' ? 1350 : 0);
+        setPointsBalance(apiClient.getPointsBalance(id));
       }
     } catch (e) {
       console.log('Failed to fetch profile/balance', e);

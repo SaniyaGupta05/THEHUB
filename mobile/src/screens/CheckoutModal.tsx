@@ -30,13 +30,17 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const { items, subtotal, shippingFee, clearCart } = useCart();
   const { customerProfile, refreshProfile } = useAuth();
 
-  const [contactEmail, setContactEmail] = useState(customerProfile?.email || 'demo@thehub.in');
-  const [contactPhone, setContactPhone] = useState(customerProfile?.phone || '+91 98765 43210');
-  const [fullName, setFullName] = useState(
-    customerProfile ? `${customerProfile.first_name} ${customerProfile.last_name}` : 'John Doe'
-  );
-  const [street, setStreet] = useState('123, Green Park, New Delhi');
-  const [cityState, setCityState] = useState('New Delhi, Delhi - 110016');
+  const defaultName = customerProfile
+    ? `${customerProfile.first_name || ''} ${customerProfile.last_name || ''}`.trim()
+    : 'Valued Customer';
+  const defaultEmail = customerProfile?.email || 'customer@thehub.in';
+  const defaultPhone = customerProfile?.phone || '+91 98250 12345';
+
+  const [contactEmail, setContactEmail] = useState(defaultEmail);
+  const [contactPhone, setContactPhone] = useState(defaultPhone);
+  const [fullName, setFullName] = useState(defaultName || 'Valued Customer');
+  const [street, setStreet] = useState('14 Alkapuri Chambers, R.C. Dutt Road');
+  const [cityState, setCityState] = useState('Vadodara, Gujarat - 390007');
   const [editingAddress, setEditingAddress] = useState(false);
   const [editingContact, setEditingContact] = useState(false);
 
@@ -50,15 +54,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   const handlePlaceOrder = async () => {
     setIsSubmitting(true);
+    const activeCid = customerProfile?.id || apiClient.getCustomerId();
     try {
       const order = await apiClient.demoCheckout({
         shipping_address: {
           full_name: fullName,
           phone: contactPhone,
           street: street,
-          city: 'New Delhi',
-          state: 'Delhi',
-          pincode: '110016',
+          city: 'Vadodara',
+          state: 'Gujarat',
+          pincode: '390007',
           country: 'India',
         },
         items,
@@ -66,6 +71,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         idempotency_key: `chk_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       });
 
+      apiClient.recordOrder(order);
       clearCart();
       setCompletedOrder(order);
       await refreshProfile();
@@ -74,7 +80,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       const fallbackOrder: Order = {
         id: `ord_${Date.now()}`,
         order_number: `HUB${Math.floor(100000000 + Math.random() * 900000000)}`,
-        customer_id: 'cust_demo',
+        customer_id: activeCid,
         items: items.map((i) => ({
           product_id: i.product_id,
           variant_id: i.variant_id,
@@ -96,14 +102,15 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           full_name: fullName,
           phone: contactPhone,
           street: street,
-          city: 'New Delhi',
-          state: 'Delhi',
-          pincode: '110016',
+          city: 'Vadodara',
+          state: 'Gujarat',
+          pincode: '390007',
           country: 'India',
         },
         created_at: new Date().toISOString(),
         is_demo: true,
       };
+      apiClient.recordOrder(fallbackOrder);
       clearCart();
       setCompletedOrder(fallbackOrder);
       await refreshProfile();
