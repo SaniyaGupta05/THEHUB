@@ -28,8 +28,8 @@ import {
 import { PosBillingCounter } from "./components/PosBillingCounter";
 import { CustomerEnrollment } from "./components/CustomerEnrollment";
 
-// API Base URL (uses Vite proxy in dev)
-const API_BASE = "http://localhost:8000/api/v1";
+// API Base URL (configurable via VITE_API_BASE_URL on Vercel/production)
+const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || "http://localhost:8000/api/v1";
 
 interface StaffSession {
   access_token: string;
