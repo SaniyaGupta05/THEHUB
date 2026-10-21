@@ -1,0 +1,12 @@
+{
+  "name": "hubklub-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The HUB - Complete Shopping & HUBKLUB Loyalty Platform with Store Billing Counter Admin Dashboard",
+  "scripts": {
+    "dev": "npm run admin",
+    "admin": "npm --prefix admin-portal run dev",
+    "mobile": "npm --prefix mobile start",
+    "backend": "python -m uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port 8000 --reload"
+  }
+}

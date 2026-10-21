@@ -1,0 +1,198 @@
+{
+  "customers": {
+    "cust_demo": {
+      "id": "cust_demo",
+      "first_name": "Aarav",
+      "last_name": "Patel",
+      "email": "aarav.patel@example.com",
+      "phone": "+91 98250 12345",
+      "member_since": "2024-03-15T10:00:00Z",
+      "is_hubklub_member": true,
+      "membership_number": "HK-2024-88412",
+      "tier": "Gold",
+      "max_single_purchase": 32900.0,
+      "annual_spend_current_year": 115595.0,
+      "lifetime_spend": 178000.0,
+      "saved_addresses": [
+        {
+          "full_name": "Aarav Patel",
+          "phone": "+91 98250 12345",
+          "street": "14 Alkapuri Chambers, R.C. Dutt Road",
+          "city": "Vadodara",
+          "state": "Gujarat",
+          "pincode": "390007",
+          "country": "India"
+        }
+      ]
+    },
+    "cust_ineligible": {
+      "id": "cust_ineligible",
+      "first_name": "Rohan",
+      "last_name": "Shah",
+      "email": "rohan.shah@example.com",
+      "phone": "+91 98980 99887",
+      "member_since": "2026-08-01T14:30:00Z",
+      "is_hubklub_member": false,
+      "membership_number": null,
+      "tier": null,
+      "max_single_purchase": 850.0,
+      "annual_spend_current_year": 850.0,
+      "lifetime_spend": 850.0,
+      "saved_addresses": [
+        {
+          "full_name": "Rohan Shah",
+          "phone": "+91 98980 99887",
+          "street": "Flat 302, Green Acres, Race Course",
+          "city": "Vadodara",
+          "state": "Gujarat",
+          "pincode": "390015",
+          "country": "India"
+        }
+      ]
+    },
+    "cust_eligible": {
+      "id": "cust_eligible",
+      "first_name": "Vikram",
+      "last_name": "Mehta",
+      "email": "vikram.mehta@example.com",
+      "phone": "+91 97240 55443",
+      "member_since": "2026-09-10T11:15:00Z",
+      "is_hubklub_member": false,
+      "membership_number": null,
+      "tier": null,
+      "max_single_purchase": 15195.0,
+      "annual_spend_current_year": 15195.0,
+      "lifetime_spend": 15195.0,
+      "saved_addresses": [
+        {
+          "full_name": "Vikram Mehta",
+          "phone": "+91 97240 55443",
+          "street": "B-44 Akota Gardens",
+          "city": "Vadodara",
+          "state": "Gujarat",
+          "pincode": "390020",
+          "country": "India"
+        }
+      ]
+    },
+    "cust_below_bonus": {
+      "id": "cust_below_bonus",
+      "first_name": "Dev",
+      "last_name": "Desai",
+      "email": "dev.desai@example.com",
+      "phone": "+91 98765 43210",
+      "member_since": "2025-01-20T12:00:00Z",
+      "is_hubklub_member": true,
+      "membership_number": "HK-2025-10294",
+      "tier": "Classic",
+      "max_single_purchase": 24500.0,
+      "annual_spend_current_year": 45000.0,
+      "lifetime_spend": 45000.0,
+      "saved_addresses": []
+    }
+  },
+  "loyalty_accounts": {
+    "cust_demo": {
+      "available_points": 3450,
+      "points_earned_current_year": 5120,
+      "annual_bonus_awarded": true,
+      "annual_bonus_points": 1024,
+      "transactions": [
+        {
+          "id": "tx_demo_01",
+          "customer_id": "cust_demo",
+          "type": "earn",
+          "points": 750,
+          "rupee_equivalent": 750.0,
+          "order_id": "ORD-HUB-2024-9102",
+          "description": "Earned 3% on Prithvi Kurta purchase (₹25,000)",
+          "timestamp": "2024-11-10T14:20:00Z",
+          "expiry_date": "2026-11-10T14:20:00Z",
+          "status": "Active"
+        },
+        {
+          "id": "tx_demo_02",
+          "customer_id": "cust_demo",
+          "type": "earn",
+          "points": 1200,
+          "rupee_equivalent": 1200.0,
+          "order_id": "ORD-HUB-2025-1045",
+          "description": "Earned 5% on Golden Horizon Bandi Set (₹24,000)",
+          "timestamp": "2025-02-14T16:45:00Z",
+          "expiry_date": "2027-02-14T16:45:00Z",
+          "status": "Active"
+        },
+        {
+          "id": "tx_demo_03",
+          "customer_id": "cust_demo",
+          "type": "earn",
+          "points": 1500,
+          "rupee_equivalent": 1500.0,
+          "order_id": "ORD-HUB-2026-0312",
+          "description": "Earned 6% on Royal Ivory Tapestry Sherwani Set (₹25,000)",
+          "timestamp": "2026-04-18T18:10:00Z",
+          "expiry_date": "2028-04-18T18:10:00Z",
+          "status": "Active"
+        },
+        {
+          "id": "tx_demo_04",
+          "customer_id": "cust_demo",
+          "type": "redeem",
+          "points": -500,
+          "rupee_equivalent": -500.0,
+          "order_id": "ORD-HUB-2026-0780",
+          "description": "Loyalty Points Redemption on Deep Sapphire Blazer (FIFO deducted from earliest 2024 batch)",
+          "timestamp": "2026-07-22T19:00:00Z",
+          "expiry_date": null,
+          "status": "Redeemed"
+        },
+        {
+          "id": "tx_demo_05",
+          "customer_id": "cust_demo",
+          "type": "bonus",
+          "points": 500,
+          "rupee_equivalent": 500.0,
+          "order_id": null,
+          "description": "20% Annual Bonus: Surpassed ₹1,00,000 annual spend milestone",
+          "timestamp": "2026-08-01T00:00:00Z",
+          "expiry_date": "2028-08-01T00:00:00Z",
+          "status": "Active"
+        }
+      ]
+    },
+    "cust_below_bonus": {
+      "available_points": 1350,
+      "points_earned_current_year": 1350,
+      "annual_bonus_awarded": false,
+      "annual_bonus_points": 0,
+      "transactions": [
+        {
+          "id": "tx_below_01",
+          "customer_id": "cust_below_bonus",
+          "type": "earn",
+          "points": 1350,
+          "rupee_equivalent": 1350.0,
+          "order_id": "ORD-HUB-2026-0044",
+          "description": "Earned 3% on ₹45,000 festive purchases",
+          "timestamp": "2026-05-10T10:00:00Z",
+          "expiry_date": "2028-05-10T10:00:00Z",
+          "status": "Active"
+        }
+      ]
+    },
+    "cust_eligible": {
+      "available_points": 0,
+      "points_earned_current_year": 0,
+      "annual_bonus_awarded": false,
+      "annual_bonus_points": 0,
+      "transactions": []
+    },
+    "cust_ineligible": {
+      "available_points": 0,
+      "points_earned_current_year": 0,
+      "annual_bonus_awarded": false,
+      "annual_bonus_points": 0,
+      "transactions": []
+    }
+  }
+}

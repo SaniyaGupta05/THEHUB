@@ -1,0 +1,256 @@
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  --bg-app: #ffffff;
+  --bg-surface: #f9fafb;
+  --bg-card: #ffffff;
+  --bg-card-elevated: #f3f4f6;
+  --bg-glass: rgba(255, 255, 255, 0.95);
+  
+  --border-subtle: #e5e7eb;
+  --border-medium: #d1d5db;
+  --border-gold: rgba(184, 134, 11, 0.35);
+  --border-gold-bright: #b8860b;
+
+  --text-primary: #0a0a0a;
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
+
+  --gold-primary: #99752b;
+  --gold-bright: #b8860b;
+  --gold-light: #fef9ee;
+  --gold-dark: #6e5218;
+  --gold-glow: rgba(184, 134, 11, 0.15);
+  --gold-gradient: linear-gradient(135deg, #b8860b 0%, #8c6d23 100%);
+  --gold-gradient-subtle: linear-gradient(135deg, rgba(184, 134, 11, 0.08) 0%, rgba(184, 134, 11, 0.02) 100%);
+  --card-gradient: #ffffff;
+
+  --success: #059669;
+  --success-glow: rgba(5, 150, 105, 0.15);
+  --warning: #d97706;
+  --danger: #dc2626;
+
+  --font-serif: 'Raleway', sans-serif;
+  --font-heading: 'Raleway', sans-serif;
+  --font-sans: 'Raleway', -apple-system, BlinkMacSystemFont, sans-serif;
+  
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+  
+  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-elevated: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+  --shadow-gold: 0 4px 16px rgba(184, 134, 11, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-family: var(--font-heading);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Typography Helpers */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Raleway', sans-serif;
+  color: #0a0a0a;
+}
+
+.font-serif {
+  font-family: 'Raleway', sans-serif;
+}
+.font-sans {
+  font-family: 'Raleway', sans-serif;
+}
+.gold-text-gradient {
+  color: #0a0a0a;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gold-bright);
+}
+
+/* Luxury Containers & Cards */
+.hub-glass-panel {
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-elevated);
+}
+
+.hub-luxury-card {
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-subtle);
+}
+
+.hub-luxury-card:hover {
+  border-color: var(--border-gold-bright);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-elevated);
+}
+
+/* HUBKLUB Member Card Graphic */
+.member-card-surface {
+  background: linear-gradient(135deg, #ffffff 0%, #faf8f5 50%, #f5efe6 100%);
+  border: 1.5px solid var(--border-gold-bright);
+  border-radius: var(--radius-lg);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 25px -5px rgba(184, 134, 11, 0.15), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+}
+
+/* Luxury Buttons */
+.btn-gold-primary {
+  background: #0a0a0a;
+  color: #ffffff;
+  font-family: 'Raleway', sans-serif;
+  font-weight: 700;
+  font-size: 0.88rem;
+  letter-spacing: 0.5px;
+  border: 1px solid #0a0a0a;
+  padding: 0.85rem 1.75rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.btn-gold-primary:hover:not(:disabled) {
+  background: #262626;
+  border-color: #262626;
+  transform: translateY(-1px);
+}
+
+.btn-gold-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-luxury-secondary {
+  background: #ffffff;
+  color: #0a0a0a;
+  border: 1px solid var(--border-medium);
+  font-family: 'Raleway', sans-serif;
+  font-weight: 600;
+  font-size: 0.88rem;
+  padding: 0.85rem 1.5rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-luxury-secondary:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #0a0a0a;
+  color: #0a0a0a;
+}
+
+/* Inputs */
+.hub-input-luxury {
+  background: #f9fafb;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  color: #0a0a0a;
+  padding: 0.9rem 1.2rem;
+  font-size: 0.95rem;
+  font-family: 'Raleway', sans-serif;
+  width: 100%;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.hub-input-luxury:focus {
+  border-color: #0a0a0a;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(10, 10, 10, 0.08);
+}
+
+.hub-input-luxury::placeholder {
+  color: var(--text-muted);
+}
+
+/* Badge styles */
+.badge-gold {
+  background: #fdf8eb;
+  border: 1px solid #f3d489;
+  color: #8c6d23;
+  font-family: 'Raleway', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-full);
+}
+
+.badge-success {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  font-family: 'Raleway', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-full);
+}
+
+.badge-mock {
+  background: #fffbeb;
+  border: 1px dashed #fcd34d;
+  color: #92400e;
+  font-family: 'Raleway', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-sm);
+}
+
+/* Animations */
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(0.97); }
+}
+
+.pulse-indicator {
+  animation: pulse-subtle 2s infinite ease-in-out;
+}

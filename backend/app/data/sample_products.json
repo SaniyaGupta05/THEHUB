@@ -1,0 +1,913 @@
+[
+  {
+    "id": "prod_1",
+    "title": "Prithvi Patchwork Mirror Kurta",
+    "handle": "prithvi",
+    "description": "A warm rust-toned kurta featuring patchwork-inspired panels, scattered motifs, and refined mirror detailing along the placket. Masterfully tailored in breathable cotton-silk blend.",
+    "vendor": "THE HUB",
+    "category": "Kurta Pajama",
+    "tags": [
+      "kurta",
+      "mirror-work",
+      "festive",
+      "rust",
+      "best-seller"
+    ],
+    "price": 15195.0,
+    "compare_at_price": 17995.0,
+    "is_sale": true,
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/Prithvi.webp?v=1790074668",
+      "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/Prithvi_a.webp?v=1790074688",
+      "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/Prithvi_b.webp?v=1790074705"
+    ],
+    "variants": [
+      {
+        "id": "var_1_s",
+        "title": "Rust / Small (38)",
+        "sku": "HUB-PRT-RST-38",
+        "price": 15195.0,
+        "compare_at_price": 17995.0,
+        "available": true,
+        "size": "38 (S)",
+        "color": "Rust"
+      },
+      {
+        "id": "var_1_m",
+        "title": "Rust / Medium (40)",
+        "sku": "HUB-PRT-RST-40",
+        "price": 15195.0,
+        "compare_at_price": 17995.0,
+        "available": true,
+        "size": "40 (M)",
+        "color": "Rust"
+      },
+      {
+        "id": "var_1_l",
+        "title": "Rust / Large (42)",
+        "sku": "HUB-PRT-RST-42",
+        "price": 15195.0,
+        "compare_at_price": 17995.0,
+        "available": true,
+        "size": "42 (L)",
+        "color": "Rust"
+      },
+      {
+        "id": "var_1_xl",
+        "title": "Rust / X-Large (44)",
+        "sku": "HUB-PRT-RST-44",
+        "price": 15195.0,
+        "compare_at_price": 17995.0,
+        "available": false,
+        "size": "44 (XL)",
+        "color": "Rust"
+      }
+    ],
+    "available": true,
+    "featured": true,
+    "is_new": true,
+    "rating": 4.9,
+    "review_count": 38
+  },
+  {
+    "id": "prod_blush",
+    "title": "Blush Radiance Mirrorwork Kurta",
+    "handle": "blush-radiance-mirrorwork-kurta",
+    "description": "An ethereal blush pink celebratory kurta decorated with handcrafted abhala mirror embroidery and subtle gold tilla needlework.",
+    "vendor": "THE HUB",
+    "category": "Kurta Pajama",
+    "tags": [
+      "kurta",
+      "mirror-work",
+      "blush",
+      "wedding",
+      "best-seller"
+    ],
+    "price": 14995.0,
+    "compare_at_price": 17500.0,
+    "is_sale": true,
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/Prithvi_a.webp?v=1790074688",
+      "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/Prithvi.webp?v=1790074668"
+    ],
+    "variants": [
+      {
+        "id": "v_b_s",
+        "title": "Blush / Small (38)",
+        "sku": "HUB-BLS-38",
+        "price": 14995.0,
+        "compare_at_price": 17500.0,
+        "available": true,
+        "size": "38 (S)",
+        "color": "Blush Pink"
+      },
+      {
+        "id": "v_b_m",
+        "title": "Blush / Medium (40)",
+        "sku": "HUB-BLS-40",
+        "price": 14995.0,
+        "compare_at_price": 17500.0,
+        "available": true,
+        "size": "40 (M)",
+        "color": "Blush Pink"
+      },
+      {
+        "id": "v_b_l",
+        "title": "Blush / Large (42)",
+        "sku": "HUB-BLS-42",
+        "price": 14995.0,
+        "compare_at_price": 17500.0,
+        "available": true,
+        "size": "42 (L)",
+        "color": "Blush Pink"
+      }
+    ],
+    "available": true,
+    "featured": true,
+    "is_new": true,
+    "rating": 4.8,
+    "review_count": 52
+  },
+  {
+    "id": "prod_2",
+    "title": "Naksh Regal Black Embroidered Kurta",
+    "handle": "naksh",
+    "description": "A classic midnight black kurta punctuated with intricate floral needlepoint motifs and refined thread detailing along the collar and concealed placket.",
+    "vendor": "THE HUB",
+    "category": "Kurta Pajama",
+    "tags": [
+      "kurta",
+      "black",
+      "festive",
+      "best-seller"
+    ],
+    "price": 12850.0,
+    "compare_at_price": null,
+    "is_sale": false,
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/Prithvi_a.webp?v=1790074688",
+      "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/Prithvi.webp?v=1790074668"
+    ],
+    "variants": [
+      {
+        "id": "var_2_s",
+        "title": "Black / Small (38)",
+        "sku": "HUB-NK-BLK-38",
+        "price": 12850.0,
+        "available": true,
+        "size": "38 (S)",
+        "color": "Black"
+      },
+      {
+        "id": "var_2_m",
+        "title": "Black / Medium (40)",
+        "sku": "HUB-NK-BLK-40",
+        "price": 12850.0,
+        "available": true,
+        "size": "40 (M)",
+        "color": "Black"
+      },
+      {
+        "id": "var_2_l",
+        "title": "Black / Large (42)",
+        "sku": "HUB-NK-BLK-42",
+        "price": 12850.0,
+        "available": true,
+        "size": "42 (L)",
+        "color": "Black"
+      }
+    ],
+    "available": true,
+    "featured": true,
+    "is_new": false,
+    "rating": 4.8,
+    "review_count": 19
+  },
+  {
+    "id": "prod_green_kurta",
+    "title": "Embroidered Elegant Green Kurta Set",
+    "handle": "embroidered-elegant-green-kurta-set",
+    "description": "An emerald green pure chanderi silk kurta with delicate Kashmiri thread embroidery, paired with ivory churidar pants.",
+    "vendor": "THE HUB",
+    "category": "Kurta Pajama",
+    "tags": [
+      "kurta",
+      "green",
+      "silk",
+      "festive"
+    ],
+    "price": 16500.0,
+    "compare_at_price": 19000.0,
+    "is_sale": true,
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/Prithvi.webp?v=1790074668",
+      "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/Prithvi_b.webp?v=1790074705"
+    ],
+    "variants": [
+      {
+        "id": "v_g_s",
+        "title": "Emerald / Small (38)",
+        "sku": "HUB-GRN-38",
+        "price": 16500.0,
+        "compare_at_price": 19000.0,
+        "available": true,
+        "size": "38 (S)",
+        "color": "Emerald Green"
+      },
+      {
+        "id": "v_g_m",
+        "title": "Emerald / Medium (40)",
+        "sku": "HUB-GRN-40",
+        "price": 16500.0,
+        "compare_at_price": 19000.0,
+        "available": true,
+        "size": "40 (M)",
+        "color": "Emerald Green"
+      },
+      {
+        "id": "v_g_l",
+        "title": "Emerald / Large (42)",
+        "sku": "HUB-GRN-42",
+        "price": 16500.0,
+        "compare_at_price": 19000.0,
+        "available": true,
+        "size": "42 (L)",
+        "color": "Emerald Green"
+      }
+    ],
+    "available": true,
+    "featured": false,
+    "is_new": true,
+    "rating": 4.7,
+    "review_count": 27
+  },
+  {
+    "id": "prod_5",
+    "title": "Heritage Silk Kalamkari Kurta",
+    "handle": "heritage-silk-kalamkari-kurta",
+    "description": "Authentic organic hand-block printed Kalamkari panels on pure raw silk fabric, paying tribute to timeless Indian craftsmanship.",
+    "vendor": "THE HUB",
+    "category": "Kurta Pajama",
+    "tags": [
+      "kalamkari",
+      "silk",
+      "artisanal",
+      "kurta"
+    ],
+    "price": 18500.0,
+    "compare_at_price": 21000.0,
+    "is_sale": true,
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/Prithvi_a.webp?v=1790074688",
+      "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/Prithvi_b.webp?v=1790074705"
+    ],
+    "variants": [
+      {
+        "id": "var_5_s",
+        "title": "Indigo / 38",
+        "sku": "HUB-KLM-IND-38",
+        "price": 18500.0,
+        "compare_at_price": 21000.0,
+        "available": true,
+        "size": "38 (S)",
+        "color": "Indigo"
+      },
+      {
+        "id": "var_5_m",
+        "title": "Indigo / 40",
+        "sku": "HUB-KLM-IND-40",
+        "price": 18500.0,
+        "compare_at_price": 21000.0,
+        "available": true,
+        "size": "40 (M)",
+        "color": "Indigo"
+      },
+      {
+        "id": "var_5_l",
+        "title": "Indigo / 42",
+        "sku": "HUB-KLM-IND-42",
+        "price": 18500.0,
+        "compare_at_price": 21000.0,
+        "available": true,
+        "size": "42 (L)",
+        "color": "Indigo"
+      }
+    ],
+    "available": true,
+    "featured": false,
+    "is_new": true,
+    "rating": 4.7,
+    "review_count": 14
+  },
+  {
+    "id": "prod_kashmiri_bandi",
+    "title": "The Kashmiri Heirloom Bandi Set",
+    "handle": "the-kashmiri-heirloom-bandi-set",
+    "description": "Exquisite silk waistcoat featuring hand-embroidered Aari needlework inspired by Mughal valley floras. Includes coordinating raw silk kurta and churidar.",
+    "vendor": "THE HUB",
+    "category": "Bandi Set",
+    "tags": [
+      "bandi",
+      "kashmiri",
+      "heirloom",
+      "festive",
+      "nehru"
+    ],
+    "price": 22500.0,
+    "compare_at_price": 25000.0,
+    "is_sale": true,
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/Prithvi_b.webp?v=1790074705",
+      "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/Prithvi.webp?v=1790074668"
+    ],
+    "variants": [
+      {
+        "id": "v_k_m",
+        "title": "Beige / 40 (M)",
+        "sku": "HUB-KSH-40",
+        "price": 22500.0,
+        "compare_at_price": 25000.0,
+        "available": true,
+        "size": "40 (M)",
+        "color": "Beige-Gold"
+      },
+      {
+        "id": "v_k_l",
+        "title": "Beige / 42 (L)",
+        "sku": "HUB-KSH-42",
+        "price": 22500.0,
+        "compare_at_price": 25000.0,
+        "available": true,
+        "size": "42 (L)",
+        "color": "Beige-Gold"
+      }
+    ],
+    "available": true,
+    "featured": true,
+    "is_new": true,
+    "rating": 4.9,
+    "review_count": 46
+  },
+  {
+    "id": "prod_3",
+    "title": "Golden Horizon Ombre Bandi Set",
+    "handle": "golden-horizon-ombre-bandi-set",
+    "description": "An opulent ombre Nehru jacket layered over a pristine silk kurta and matching churidar. Accented with brass antique metal buttons.",
+    "vendor": "THE HUB",
+    "category": "Bandi Set",
+    "tags": [
+      "bandi",
+      "ombre",
+      "gold",
+      "set"
+    ],
+    "price": 24500.0,
+    "compare_at_price": 27000.0,
+    "is_sale": true,
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/Prithvi_b.webp?v=1790074705",
+      "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/Prithvi.webp?v=1790074668"
+    ],
+    "variants": [
+      {
+        "id": "var_3_m",
+        "title": "Gold-Sand / Medium (40)",
+        "sku": "HUB-BND-GLD-40",
+        "price": 24500.0,
+        "compare_at_price": 27000.0,
+        "available": true,
+        "size": "40 (M)",
+        "color": "Gold"
+      },
+      {
+        "id": "var_3_l",
+        "title": "Gold-Sand / Large (42)",
+        "sku": "HUB-BND-GLD-42",
+        "price": 24500.0,
+        "compare_at_price": 27000.0,
+        "available": true,
+        "size": "42 (L)",
+        "color": "Gold"
+      }
+    ],
+    "available": true,
+    "featured": true,
+    "is_new": true,
+    "rating": 5.0,
+    "review_count": 42
+  },
+  {
+    "id": "prod_brasso_bandi",
+    "title": "Brasso Print Ivory Silk Bandi Set",
+    "handle": "brasso-print-ivory-silk-bandi-set",
+    "description": "Crafted from fine brasso woven georgette silk with tonal velvet motifs and Mother-of-Pearl buttons.",
+    "vendor": "THE HUB",
+    "category": "Bandi Set",
+    "tags": [
+      "bandi",
+      "brasso",
+      "ivory",
+      "festive"
+    ],
+    "price": 19800.0,
+    "compare_at_price": 22000.0,
+    "is_sale": true,
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/Prithvi_a.webp?v=1790074688"
+    ],
+    "variants": [
+      {
+        "id": "v_br_s",
+        "title": "Ivory / 38",
+        "sku": "HUB-BRS-38",
+        "price": 19800.0,
+        "available": true,
+        "size": "38 (S)",
+        "color": "Ivory"
+      },
+      {
+        "id": "v_br_m",
+        "title": "Ivory / 40",
+        "sku": "HUB-BRS-40",
+        "price": 19800.0,
+        "available": true,
+        "size": "40 (M)",
+        "color": "Ivory"
+      },
+      {
+        "id": "v_br_l",
+        "title": "Ivory / 42",
+        "sku": "HUB-BRS-42",
+        "price": 19800.0,
+        "available": true,
+        "size": "42 (L)",
+        "color": "Ivory"
+      }
+    ],
+    "available": true,
+    "featured": false,
+    "is_new": false,
+    "rating": 4.8,
+    "review_count": 23
+  },
+  {
+    "id": "prod_4",
+    "title": "Royal Ivory Tapestry Sherwani Set",
+    "handle": "royal-ivory-tapestry-sherwani-set",
+    "description": "Exquisite bridal sherwani ensemble hand-embroidered in zardosi wire and resham silk thread. Complete with safa, matching stole, and churidar trousers.",
+    "vendor": "THE HUB",
+    "category": "Sherwani",
+    "tags": [
+      "sherwani",
+      "ivory",
+      "wedding",
+      "groom"
+    ],
+    "price": 68000.0,
+    "compare_at_price": 75000.0,
+    "is_sale": true,
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/The_HUB_Website.jpg?v=1758865025",
+      "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/Prithvi.webp?v=1790074668"
+    ],
+    "variants": [
+      {
+        "id": "var_4_m",
+        "title": "Ivory / 40",
+        "sku": "HUB-SHR-IVR-40",
+        "price": 68000.0,
+        "compare_at_price": 75000.0,
+        "available": true,
+        "size": "40 (M)",
+        "color": "Ivory"
+      },
+      {
+        "id": "var_4_l",
+        "title": "Ivory / 42",
+        "sku": "HUB-SHR-IVR-42",
+        "price": 68000.0,
+        "compare_at_price": 75000.0,
+        "available": true,
+        "size": "42 (L)",
+        "color": "Ivory"
+      },
+      {
+        "id": "var_4_xl",
+        "title": "Ivory / 44",
+        "sku": "HUB-SHR-IVR-44",
+        "price": 68000.0,
+        "compare_at_price": 75000.0,
+        "available": true,
+        "size": "44 (XL)",
+        "color": "Ivory"
+      }
+    ],
+    "available": true,
+    "featured": true,
+    "is_new": false,
+    "rating": 5.0,
+    "review_count": 61
+  },
+  {
+    "id": "prod_zardosi_sherwani",
+    "title": "Heritage Zardosi Raw Silk Groom Sherwani",
+    "handle": "heritage-zardosi-raw-silk-groom-sherwani",
+    "description": "Couture wedding sherwani woven in handloom raw silk, encrusted with dabka, french knots, and semi-precious stone embellishments.",
+    "vendor": "THE HUB",
+    "category": "Sherwani",
+    "tags": [
+      "sherwani",
+      "groom",
+      "wedding",
+      "couture",
+      "zardosi"
+    ],
+    "price": 84500.0,
+    "compare_at_price": 92000.0,
+    "is_sale": true,
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/The_HUB_Website.jpg?v=1758865025"
+    ],
+    "variants": [
+      {
+        "id": "v_zs_m",
+        "title": "Champagne / 40",
+        "sku": "HUB-ZSH-40",
+        "price": 84500.0,
+        "available": true,
+        "size": "40 (M)",
+        "color": "Champagne Gold"
+      },
+      {
+        "id": "v_zs_l",
+        "title": "Champagne / 42",
+        "sku": "HUB-ZSH-42",
+        "price": 84500.0,
+        "available": true,
+        "size": "42 (L)",
+        "color": "Champagne Gold"
+      }
+    ],
+    "available": true,
+    "featured": true,
+    "is_new": true,
+    "rating": 5.0,
+    "review_count": 31
+  },
+  {
+    "id": "prod_achkan_navy",
+    "title": "Midnight Navy Royal Achkan Set",
+    "handle": "midnight-navy-royal-achkan-set",
+    "description": "A tailored knee-length royal achkan featuring asymmetric front overlap and antiqued crest buttons in solid navy suiting wool.",
+    "vendor": "THE HUB",
+    "category": "Sherwani",
+    "tags": [
+      "achkan",
+      "navy",
+      "royal",
+      "wedding"
+    ],
+    "price": 54000.0,
+    "compare_at_price": 60000.0,
+    "is_sale": true,
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/Prithvi_a.webp?v=1790074688"
+    ],
+    "variants": [
+      {
+        "id": "v_an_s",
+        "title": "Navy / 38",
+        "sku": "HUB-ACK-38",
+        "price": 54000.0,
+        "available": true,
+        "size": "38 (S)",
+        "color": "Navy"
+      },
+      {
+        "id": "v_an_m",
+        "title": "Navy / 40",
+        "sku": "HUB-ACK-40",
+        "price": 54000.0,
+        "available": true,
+        "size": "40 (M)",
+        "color": "Navy"
+      },
+      {
+        "id": "v_an_l",
+        "title": "Navy / 42",
+        "sku": "HUB-ACK-42",
+        "price": 54000.0,
+        "available": true,
+        "size": "42 (L)",
+        "color": "Navy"
+      }
+    ],
+    "available": true,
+    "featured": false,
+    "is_new": false,
+    "rating": 4.9,
+    "review_count": 18
+  },
+  {
+    "id": "prod_matka_indo",
+    "title": "Matka Silk Contemporary Indo-Western Set",
+    "handle": "matka-silk-contemporary-indo-western-set",
+    "description": "Modern fusion silhouette blending western structured shoulder pads with Indian asymmetrical drapes in pure handloom matka silk.",
+    "vendor": "THE HUB",
+    "category": "Indo Western",
+    "tags": [
+      "indo-western",
+      "matka-silk",
+      "fusion",
+      "reception"
+    ],
+    "price": 38500.0,
+    "compare_at_price": 42000.0,
+    "is_sale": true,
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/Prithvi.webp?v=1790074668"
+    ],
+    "variants": [
+      {
+        "id": "v_m_s",
+        "title": "Burgundy / 38",
+        "sku": "HUB-INDO-38",
+        "price": 38500.0,
+        "available": true,
+        "size": "38 (S)",
+        "color": "Burgundy"
+      },
+      {
+        "id": "v_m_m",
+        "title": "Burgundy / 40",
+        "sku": "HUB-INDO-40",
+        "price": 38500.0,
+        "available": true,
+        "size": "40 (M)",
+        "color": "Burgundy"
+      },
+      {
+        "id": "v_m_l",
+        "title": "Burgundy / 42",
+        "sku": "HUB-INDO-42",
+        "price": 38500.0,
+        "available": true,
+        "size": "42 (L)",
+        "color": "Burgundy"
+      }
+    ],
+    "available": true,
+    "featured": true,
+    "is_new": true,
+    "rating": 4.8,
+    "review_count": 29
+  },
+  {
+    "id": "prod_jodhpuri",
+    "title": "Imperial Charcoal Jodhpuri Bandhgala Suit",
+    "handle": "imperial-charcoal-jodhpuri-bandhgala-suit",
+    "description": "The quintessential royal Jodhpuri tailored in rich charcoal English wool with horn buttons and satin piped mandarin collar.",
+    "vendor": "THE HUB",
+    "category": "Jodhpuri Suit",
+    "tags": [
+      "jodhpuri",
+      "bandhgala",
+      "suit",
+      "charcoal"
+    ],
+    "price": 34900.0,
+    "compare_at_price": 39000.0,
+    "is_sale": true,
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/Prithvi_b.webp?v=1790074705"
+    ],
+    "variants": [
+      {
+        "id": "v_j_m",
+        "title": "Charcoal / 40",
+        "sku": "HUB-JOD-40",
+        "price": 34900.0,
+        "available": true,
+        "size": "40 (M)",
+        "color": "Charcoal"
+      },
+      {
+        "id": "v_j_l",
+        "title": "Charcoal / 42",
+        "sku": "HUB-JOD-42",
+        "price": 34900.0,
+        "available": true,
+        "size": "42 (L)",
+        "color": "Charcoal"
+      }
+    ],
+    "available": true,
+    "featured": false,
+    "is_new": false,
+    "rating": 4.9,
+    "review_count": 35
+  },
+  {
+    "id": "prod_6",
+    "title": "Deep Sapphire Bespoke Tuxedo Blazer",
+    "handle": "deep-sapphire-tuxedo-blazer",
+    "description": "Structured Italian wool-blend evening blazer featuring satin shawl lapels and bespoken hand-stitched barchetta pocket.",
+    "vendor": "THE HUB",
+    "category": "Tuxedos",
+    "tags": [
+      "blazer",
+      "tuxedo",
+      "evening",
+      "sapphire"
+    ],
+    "price": 32900.0,
+    "compare_at_price": 36500.0,
+    "is_sale": true,
+    "images": [
+      "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/Prithvi_b.webp?v=1790074705",
+      "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/The_HUB_Website.jpg?v=1758865025"
+    ],
+    "variants": [
+      {
+        "id": "var_6_s",
+        "title": "Sapphire / 38",
+        "sku": "HUB-TUX-SPH-38",
+        "price": 32900.0,
+        "compare_at_price": 36500.0,
+        "available": true,
+        "size": "38 (S)",
+        "color": "Sapphire"
+      },
+      {
+        "id": "var_6_m",
+        "title": "Sapphire / 40",
+        "sku": "HUB-TUX-SPH-40",
+        "price": 32900.0,
+        "compare_at_price": 36500.0,
+        "available": true,
+        "size": "40 (M)",
+        "color": "Sapphire"
+      },
+      {
+        "id": "var_6_l",
+        "title": "Sapphire / 42",
+        "sku": "HUB-TUX-SPH-42",
+        "price": 32900.0,
+        "compare_at_price": 36500.0,
+        "available": true,
+        "size": "42 (L)",
+        "color": "Sapphire"
+      }
+    ],
+    "available": true,
+    "featured": true,
+    "is_new": false,
+    "rating": 4.9,
+    "review_count": 27
+  },
+  {
+    "id": "prod_linen_shirt",
+    "title": "Pure Flax Linen Mandarin Collar Shirt",
+    "handle": "pure-flax-linen-mandarin-collar-shirt",
+    "description": "Bespoke washed European flax linen shirt designed with a sleek band collar and clean mother-of-pearl buttons.",
+    "vendor": "THE HUB",
+    "category": "Casuals & Shirts",
+    "tags": [
+      "linen",
+      "shirt",
+      "casual",
+      "mandarin"
+    ],
+    "price": 4995.0,
+    "compare_at_price": 6500.0,
+    "is_sale": true,
+    "images": [
+      "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=800&q=80"
+    ],
+    "variants": [
+      {
+        "id": "v_ls_s",
+        "title": "White / 38",
+        "sku": "HUB-SHRT-38",
+        "price": 4995.0,
+        "available": true,
+        "size": "38 (S)",
+        "color": "White"
+      },
+      {
+        "id": "v_ls_m",
+        "title": "White / 40",
+        "sku": "HUB-SHRT-40",
+        "price": 4995.0,
+        "available": true,
+        "size": "40 (M)",
+        "color": "White"
+      },
+      {
+        "id": "v_ls_l",
+        "title": "White / 42",
+        "sku": "HUB-SHRT-42",
+        "price": 4995.0,
+        "available": true,
+        "size": "42 (L)",
+        "color": "White"
+      }
+    ],
+    "available": true,
+    "featured": true,
+    "is_new": true,
+    "rating": 4.7,
+    "review_count": 48
+  },
+  {
+    "id": "prod_mojari",
+    "title": "Handcrafted Embroidered Raw Silk Mojari",
+    "handle": "handcrafted-embroidered-raw-silk-mojari",
+    "description": "Traditional jutti crafted with padded insole, pure leather sole, and zardosi needlework on raw silk uppers.",
+    "vendor": "THE HUB",
+    "category": "Accessories & Footwear",
+    "tags": [
+      "mojari",
+      "jutti",
+      "footwear",
+      "accessories",
+      "wedding"
+    ],
+    "price": 5999.0,
+    "compare_at_price": 7500.0,
+    "is_sale": true,
+    "images": [
+      "https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=800&q=80"
+    ],
+    "variants": [
+      {
+        "id": "v_mj_8",
+        "title": "Gold / UK 8",
+        "sku": "HUB-MOJ-8",
+        "price": 5999.0,
+        "available": true,
+        "size": "UK 8",
+        "color": "Gold"
+      },
+      {
+        "id": "v_mj_9",
+        "title": "Gold / UK 9",
+        "sku": "HUB-MOJ-9",
+        "price": 5999.0,
+        "available": true,
+        "size": "UK 9",
+        "color": "Gold"
+      },
+      {
+        "id": "v_mj_10",
+        "title": "Gold / UK 10",
+        "sku": "HUB-MOJ-10",
+        "price": 5999.0,
+        "available": true,
+        "size": "UK 10",
+        "color": "Gold"
+      }
+    ],
+    "available": true,
+    "featured": false,
+    "is_new": false,
+    "rating": 4.8,
+    "review_count": 39
+  },
+  {
+    "id": "prod_brooch",
+    "title": "Antique Gold Kundan & Pearl Brooch",
+    "handle": "antique-gold-kundan-pearl-brooch",
+    "description": "Heirloom handcrafted sherwani brooch crafted with uncut kundan stones, green meenakari enamelling, and hanging basra pearls.",
+    "vendor": "THE HUB",
+    "category": "Accessories & Footwear",
+    "tags": [
+      "brooch",
+      "kundan",
+      "jewelry",
+      "accessories"
+    ],
+    "price": 3499.0,
+    "compare_at_price": 4200.0,
+    "is_sale": true,
+    "images": [
+      "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=800&q=80"
+    ],
+    "variants": [
+      {
+        "id": "v_br_def",
+        "title": "Antique Gold / Regular",
+        "sku": "HUB-BRCH-01",
+        "price": 3499.0,
+        "available": true,
+        "size": "One Size",
+        "color": "Gold"
+      }
+    ],
+    "available": true,
+    "featured": false,
+    "is_new": true,
+    "rating": 5.0,
+    "review_count": 22
+  }
+]

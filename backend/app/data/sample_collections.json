@@ -1,0 +1,90 @@
+[
+  {
+    "id": "col_kurta_pajama",
+    "title": "Kurta Pajama",
+    "handle": "kurta-pajama",
+    "description": "Signature Lucknowi threadwork, mirror-work, and Kalamkari designer festive kurtas from The HUB boutique.",
+    "image": "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/Prithvi.webp?v=1790074668",
+    "product_count": 41
+  },
+  {
+    "id": "col_bandi_set",
+    "title": "Bandi Set",
+    "handle": "bandi-set",
+    "description": "The HUB signature Nehru jackets, Kashmiri heirlooms, and embroidered silk waistcoats.",
+    "image": "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/Prithvi_b.webp?v=1790074705",
+    "product_count": 18
+  },
+  {
+    "id": "col_sherwani",
+    "title": "Sherwani",
+    "handle": "sherwani",
+    "description": "Regal bridal sherwanis, achkans, and groom ensembles hand-embroidered in zardosi and resham thread.",
+    "image": "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/The_HUB_Website.jpg?v=1758865025",
+    "product_count": 16
+  },
+  {
+    "id": "col_indo_western",
+    "title": "Indo Western",
+    "handle": "indo-western",
+    "description": "Contemporary matka silk fusion silhouettes, asymmetric cuts, and modern festive sets.",
+    "image": "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/HUB_JAGNIVAS2025_WEBSITE_IMG_005_C.webp?v=1765358167",
+    "product_count": 23
+  },
+  {
+    "id": "col_jodhpuri",
+    "title": "Jodhpuri Suit",
+    "handle": "jodhpuri-suit",
+    "description": "Structured bandhgala coats and tailored royal Jodhpuri trousers for grand Indian celebrations.",
+    "image": "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/HUB_JAGNIVAS2025_WEBSITE_IMG_018_A.webp?v=1765358030",
+    "product_count": 6
+  },
+  {
+    "id": "col_suits",
+    "title": "Suits",
+    "handle": "suits",
+    "description": "Italian wool-blend tailored three-piece suits, double-breasted coats, and formal evening wear.",
+    "image": "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/HUB_JAGNIVAS2025_WEBSITE_IMG_006_B_c54ceec9-e92c-430d-9d09-0f40de3996e6.webp?v=1765358848",
+    "product_count": 12
+  },
+  {
+    "id": "col_tuxedos",
+    "title": "Tuxedos",
+    "handle": "tuxedos",
+    "description": "Bespoke evening tuxedos with satin shawl lapels, velvet trims, and refined cocktail tailoring.",
+    "image": "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=600&q=80",
+    "product_count": 7
+  },
+  {
+    "id": "col_haldi",
+    "title": "Haldi Dress",
+    "handle": "haldi",
+    "description": "Vibrant sunshine yellow, mustard, and marigold festive kurta sets curated for haldi ceremonies.",
+    "image": "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/Kesariya.webp?v=1790074972",
+    "product_count": 14
+  },
+  {
+    "id": "col_sangeet",
+    "title": "Sangeet Dress",
+    "handle": "sangeet",
+    "description": "Mirror-work and gleaming embroidered sets crafted to dazzle on sangeet and cocktail nights.",
+    "image": "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/Mehandi-Outfit-003A.webp?v=1754916540",
+    "product_count": 14
+  },
+  {
+    "id": "col_wedding",
+    "title": "Wedding Outfits",
+    "handle": "wedding",
+    "description": "The quintessential groom and baraat wedding couture collection by THE HUB.",
+    "image": "https://cdn.shopify.com/s/files/1/0593/8918/2049/files/HUB_JAGNIVAS2025_WEBSITE_IMG_020_C.webp?v=1780031969",
+    "product_count": 15
+  },
+  {
+    "id": "col_accessories",
+    "title": "Accessories & Footwear",
+    "handle": "accessories",
+    "description": "Handcrafted silk mojaris, antique gold brooches, pocket squares, safas, and stoles.",
+    "image": "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=600&q=80",
+    "product_count": 34
+  }
+]
