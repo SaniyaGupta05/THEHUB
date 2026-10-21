@@ -99,8 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoggedIn(true);
       setActiveCustomerId(profile.id);
       setCustomerProfile(profile);
-      setPointsBalance(0);
-      await fetchProfile(profile.id);
+      setPointsBalance(100);
     } finally {
       setIsLoading(false);
     }

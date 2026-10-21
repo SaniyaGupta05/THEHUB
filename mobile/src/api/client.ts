@@ -13,6 +13,7 @@ import {
 
 class ApiClient {
   private customerId: string = 'cust_demo';
+  private customProfiles: Map<string, CustomerProfile> = new Map();
 
   setCustomerId(id: string) {
     this.customerId = id;
@@ -344,11 +345,14 @@ class ApiClient {
     }
 
     if (endpoint.includes('/me')) {
+      if (this.customProfiles.has(cid)) {
+        return Promise.resolve(this.customProfiles.get(cid) as unknown as T);
+      }
       const profile: CustomerProfile = {
         id: cid,
-        first_name: isGold ? 'Aarav' : isIneligible ? 'Rohan' : 'Vikram',
-        last_name: isGold ? 'Patel' : isIneligible ? 'Shah' : 'Mehta',
-        email: `${cid}@example.com`,
+        first_name: isGold ? 'Aarav' : isIneligible ? 'Rohan' : cid === 'cust_below_bonus' ? 'Dev' : 'Member',
+        last_name: isGold ? 'Patel' : isIneligible ? 'Shah' : cid === 'cust_below_bonus' ? 'Desai' : '',
+        email: `${cid}@thehub.in`,
         phone: '+91 98250 12345',
         member_since: '2024-03-15T10:00:00Z',
         is_hubklub_member: isGold || cid === 'cust_below_bonus',
@@ -472,11 +476,12 @@ class ApiClient {
       try {
         body = options.body ? JSON.parse(options.body as string) : {};
       } catch {}
+      const newId = `cust_${Date.now()}`;
       const newCust: CustomerProfile = {
-        id: `cust_${Date.now()}`,
-        first_name: body.first_name || 'Member',
-        last_name: body.last_name || '',
-        email: body.email || 'customer@thehub.in',
+        id: newId,
+        first_name: (body.first_name || 'Member').trim(),
+        last_name: (body.last_name || '').trim(),
+        email: body.email || `${newId}@thehub.in`,
         phone: body.phone || '+91 98765 43210',
         member_since: new Date().toISOString(),
         is_hubklub_member: true,
@@ -487,6 +492,7 @@ class ApiClient {
         lifetime_spend: 0,
         saved_addresses: [],
       };
+      this.customProfiles.set(newId, newCust);
       return Promise.resolve(newCust as unknown as T);
     }
 
@@ -496,6 +502,14 @@ class ApiClient {
         body = options.body ? JSON.parse(options.body as string) : {};
       } catch {}
       const idOrEmail = (body.identifier || '').toLowerCase();
+      if (this.customProfiles.has(idOrEmail)) {
+        return Promise.resolve(this.customProfiles.get(idOrEmail) as unknown as T);
+      }
+      for (const [_, p] of this.customProfiles) {
+        if (p.email.toLowerCase() === idOrEmail || p.phone.includes(idOrEmail)) {
+          return Promise.resolve(p as unknown as T);
+        }
+      }
       const demoFound = DEMO_CUSTOMERS.find(
         (c) => c.id === idOrEmail || c.name.toLowerCase().includes(idOrEmail)
       );
