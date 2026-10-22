@@ -29,7 +29,8 @@ import { PosBillingCounter } from "./components/PosBillingCounter";
 import { CustomerEnrollment } from "./components/CustomerEnrollment";
 
 // API Base URL (configurable via VITE_API_BASE_URL on Vercel/production)
-const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || "http://localhost:8000/api/v1";
+const isLocalEnv = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+const API_BASE = ((import.meta as any).env?.VITE_API_BASE_URL as string) || (isLocalEnv ? "http://localhost:8000/api/v1" : "https://thehub-unce.onrender.com/api/v1");
 
 interface StaffSession {
   access_token: string;
@@ -110,8 +111,10 @@ export default function App() {
       `${API_BASE}/admin/login`,
       `/api/v1/staff/auth/login`,
       `/admin/login`,
-      `http://localhost:8000/api/v1/staff/auth/login`,
-      `http://localhost:8000/admin/login`,
+      ...(isLocalEnv ? [
+        `http://localhost:8000/api/v1/staff/auth/login`,
+        `http://localhost:8000/admin/login`,
+      ] : []),
     ];
 
     let lastError = "Authentication failed";
