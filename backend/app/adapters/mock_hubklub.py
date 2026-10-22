@@ -86,23 +86,24 @@ class MockHubklubAdapter(HubklubAdapterBase):
         if q in self._customers:
             return self._customers[q]
 
-        # 2. Match by phone digits (strip non-digits)
+        # 2. Match by phone digits (exact 10 digits required)
         q_digits = "".join(ch for ch in q if ch.isdigit())
-        if q_digits and len(q_digits) >= 4:
+        if q_digits and len(q_digits) >= 10:
             for c in self._customers.values():
                 c_digits = "".join(ch for ch in (c.phone or "") if ch.isdigit())
-                if q_digits in c_digits or (len(q_digits) >= 10 and c_digits.endswith(q_digits[-10:])):
+                if c_digits == q_digits or c_digits.endswith(q_digits[-10:]):
                     return c
 
-        # 3. Match by name (first name, last name, full name)
-        for c in self._customers.values():
-            full = f"{c.first_name} {c.last_name}".lower()
-            if q in full or q in c.first_name.lower() or q in c.last_name.lower():
-                return c
-            if c.email and q in c.email.lower():
-                return c
-            if c.membership_number and q in c.membership_number.lower():
-                return c
+        # 3. Match by name or exact email/membership (only if query is not a phone number)
+        if not q_digits or len(q_digits) < 4:
+            for c in self._customers.values():
+                full = f"{c.first_name} {c.last_name}".lower()
+                if q in full or q in c.first_name.lower() or q in c.last_name.lower():
+                    return c
+                if c.email and q == c.email.lower():
+                    return c
+                if c.membership_number and q == c.membership_number.lower():
+                    return c
 
         return None
 

@@ -1,31 +1,16 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
+const CLOUD_API_URL = 'https://thehub-unce.onrender.com/api/v1';
+
 function resolveApiBaseUrl(): string {
-  // 1. Explicit environment variable override
+  // 1. Explicit environment variable override (e.g. from mobile/.env or EAS build secrets)
   if (process.env.EXPO_PUBLIC_API_URL) {
     return process.env.EXPO_PUBLIC_API_URL;
   }
 
-  // 2. Dynamic host detection from Expo Metro bundler
-  // In Expo Go on a physical phone, hostUri provides the computer's LAN IP (e.g. 192.168.1.47:8081)
-  const hostUri =
-    Constants.expoConfig?.hostUri ||
-    (Constants as any).manifest2?.extra?.expoGo?.debuggerHost ||
-    (Constants as any).manifest?.debuggerHost;
-
-  if (hostUri) {
-    const host = hostUri.split(':')[0];
-    if (host && host !== 'localhost' && host !== '127.0.0.1') {
-      return `http://${host}:8000/api/v1`;
-    }
-  }
-
-  // 3. Fallback for physical devices on local Wi-Fi vs Android emulator
-  return Platform.select({
-    android: 'http://192.168.1.47:8000/api/v1',
-    default: 'http://localhost:8000/api/v1',
-  });
+  // 2. Default to the shared cloud Render backend so mobile and website sync with the same database
+  return CLOUD_API_URL;
 }
 
 export const API_BASE_URL = resolveApiBaseUrl();

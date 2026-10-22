@@ -91,21 +91,22 @@ class DBHubklubAdapter(HubklubAdapterBase):
             if c:
                 return self._convert_db_customer(c)
 
-            # 3. Match by phone digits
+            # 3. Match by phone digits (exact 10 digits required)
             q_digits = "".join(ch for ch in q if ch.isdigit())
-            if q_digits and len(q_digits) >= 4:
+            if q_digits and len(q_digits) >= 10:
                 all_customers = db.query(DBCustomer).all()
                 for cust in all_customers:
                     c_digits = "".join(ch for ch in (cust.phone or "") if ch.isdigit())
-                    if q_digits in c_digits or (len(q_digits) >= 10 and c_digits.endswith(q_digits[-10:])):
+                    if c_digits == q_digits or c_digits.endswith(q_digits[-10:]):
                         return self._convert_db_customer(cust)
 
-            # 4. Match by name
-            all_customers = db.query(DBCustomer).all()
-            for cust in all_customers:
-                full = f"{cust.first_name} {cust.last_name}".lower()
-                if q in full or q in cust.first_name.lower() or q in cust.last_name.lower():
-                    return self._convert_db_customer(cust)
+            # 4. Match by name (only if query is not a phone number)
+            if not q_digits or len(q_digits) < 4:
+                all_customers = db.query(DBCustomer).all()
+                for cust in all_customers:
+                    full = f"{cust.first_name} {cust.last_name}".lower()
+                    if q in full or q in cust.first_name.lower() or q in cust.last_name.lower():
+                        return self._convert_db_customer(cust)
 
             return None
         finally:
