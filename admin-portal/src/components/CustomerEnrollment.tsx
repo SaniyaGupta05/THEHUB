@@ -100,10 +100,11 @@ export const CustomerEnrollment: React.FC<CustomerEnrollmentProps> = ({
   const loadDirectory = async () => {
     setLoadingDirectory(true);
     try {
+      const isLocal = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
       const endpoints = [
         `${apiBase}/admin/customers`,
         `/api/v1/admin/customers`,
-        `http://localhost:8000/api/v1/admin/customers`,
+        ...(isLocal ? [`http://localhost:8000/api/v1/admin/customers`] : []),
       ];
       for (const ep of endpoints) {
         try {
@@ -145,10 +146,11 @@ export const CustomerEnrollment: React.FC<CustomerEnrollmentProps> = ({
 
     setSendingOtp(true);
     try {
+      const isLocal = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
       const endpoints = [
         `${apiBase}/staff/customers/send-otp`,
         `/api/v1/staff/customers/send-otp`,
-        `http://localhost:8000/api/v1/staff/customers/send-otp`,
+        ...(isLocal ? [`http://localhost:8000/api/v1/staff/customers/send-otp`] : []),
       ];
 
       let sent = false;
@@ -197,10 +199,11 @@ export const CustomerEnrollment: React.FC<CustomerEnrollmentProps> = ({
 
     setVerifyingOtp(true);
     try {
+      const isLocal = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
       const endpoints = [
         `${apiBase}/staff/customers/create-with-otp`,
         `/api/v1/staff/customers/create-with-otp`,
-        `http://localhost:8000/api/v1/staff/customers/create-with-otp`,
+        ...(isLocal ? [`http://localhost:8000/api/v1/staff/customers/create-with-otp`] : []),
       ];
 
       let verified = false;

@@ -105,10 +105,11 @@ export const PosBillingCounter: React.FC<PosBillingCounterProps> = ({
     setLookupError("");
 
     try {
+      const isLocal = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
       const endpoints = [
         `${apiBase}/staff/billing/lookup`,
         `/api/v1/staff/billing/lookup`,
-        `http://localhost:8000/api/v1/staff/billing/lookup`,
+        ...(isLocal ? [`http://localhost:8000/api/v1/staff/billing/lookup`] : []),
       ];
 
       let resData = null;
@@ -179,10 +180,11 @@ export const PosBillingCounter: React.FC<PosBillingCounterProps> = ({
     setProcessing(true);
 
     try {
+      const isLocal = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
       const endpoints = [
         `${apiBase}/staff/billing/process-invoice`,
         `/api/v1/staff/billing/process-invoice`,
-        `http://localhost:8000/api/v1/staff/billing/process-invoice`,
+        ...(isLocal ? [`http://localhost:8000/api/v1/staff/billing/process-invoice`] : []),
       ];
 
       let result = null;
