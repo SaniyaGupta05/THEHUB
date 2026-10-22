@@ -11,6 +11,109 @@ import {
   PointsTransaction,
 } from '../types';
 
+export const DATASET_PROFILES: CustomerProfile[] = [
+  {
+    id: 'cust_demo',
+    first_name: 'Aarav',
+    last_name: 'Patel',
+    email: 'aarav.patel@example.com',
+    phone: '+91 98250 12345',
+    member_since: '2024-03-15T10:00:00Z',
+    is_hubklub_member: true,
+    membership_number: 'HK-2024-88412',
+    tier: 'Gold',
+    max_single_purchase: 32900,
+    annual_spend_current_year: 115595,
+    lifetime_spend: 178000,
+    saved_addresses: [
+      {
+        full_name: 'Aarav Patel',
+        phone: '+91 98250 12345',
+        street: '14 Alkapuri Chambers, R.C. Dutt Road',
+        city: 'Vadodara',
+        state: 'Gujarat',
+        pincode: '390007',
+        country: 'India',
+      },
+    ],
+  },
+  {
+    id: 'cust_below_bonus',
+    first_name: 'Dev',
+    last_name: 'Desai',
+    email: 'dev.desai@example.com',
+    phone: '+91 98765 43210',
+    member_since: '2025-01-10T10:00:00Z',
+    is_hubklub_member: true,
+    membership_number: 'HK-2025-10294',
+    tier: 'Classic',
+    max_single_purchase: 15000,
+    annual_spend_current_year: 45000,
+    lifetime_spend: 45000,
+    saved_addresses: [
+      {
+        full_name: 'Dev Desai',
+        phone: '+91 98765 43210',
+        street: '8 Race Course Road, Opp. Inox',
+        city: 'Vadodara',
+        state: 'Gujarat',
+        pincode: '390007',
+        country: 'India',
+      },
+    ],
+  },
+  {
+    id: 'cust_eligible',
+    first_name: 'Vikram',
+    last_name: 'Mehta',
+    email: 'vikram.mehta@example.com',
+    phone: '+91 97240 55443',
+    member_since: '2026-02-01T10:00:00Z',
+    is_hubklub_member: true,
+    membership_number: 'HK-2026-0DE79',
+    tier: 'Classic',
+    max_single_purchase: 15195,
+    annual_spend_current_year: 15195,
+    lifetime_spend: 15195,
+    saved_addresses: [
+      {
+        full_name: 'Vikram Mehta',
+        phone: '+91 97240 55443',
+        street: '22 Sampatrao Colony, Alkapuri',
+        city: 'Vadodara',
+        state: 'Gujarat',
+        pincode: '390007',
+        country: 'India',
+      },
+    ],
+  },
+  {
+    id: 'cust_ineligible',
+    first_name: 'Rohan',
+    last_name: 'Shah',
+    email: 'rohan.shah@example.com',
+    phone: '+91 98980 99887',
+    member_since: '2026-03-01T10:00:00Z',
+    is_hubklub_member: false,
+    membership_number: undefined,
+    tier: 'Classic',
+    max_single_purchase: 850,
+    annual_spend_current_year: 850,
+    lifetime_spend: 850,
+    saved_addresses: [
+      {
+        full_name: 'Rohan Shah',
+        phone: '+91 98980 99887',
+        street: '5 Sayajigunj Tower',
+        city: 'Vadodara',
+        state: 'Gujarat',
+        pincode: '390005',
+        country: 'India',
+      },
+    ],
+  },
+];
+
 class ApiClient {
   private customerId: string = 'cust_demo';
   private customProfiles: Map<string, CustomerProfile> = new Map();
@@ -60,15 +163,26 @@ class ApiClient {
       ...(options.headers || {}),
     };
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2500);
+
     try {
-      const response = await fetch(url, { ...options, headers });
+      const response = await fetch(url, { ...options, headers, signal: controller.signal });
+      clearTimeout(timeoutId);
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `HTTP Error ${response.status}`);
+        const err = new Error(errorData.detail || `HTTP Error ${response.status}`);
+        (err as any).status = response.status;
+        throw err;
       }
       return await response.json();
     } catch (err: any) {
-      // If server is not responding, fallback to local mock data handler
+      clearTimeout(timeoutId);
+      // If server explicitly returned client error (400, 401, 404), rethrow to inform UI
+      if (err.status && err.status >= 400 && err.status < 500) {
+        throw err;
+      }
+      // If server is not responding, timed out, or connection refused, fallback to local mock data handler
       console.log(`[Offline Fallback] API call ${endpoint}: ${err.message}`);
       return this.fallbackHandler<T>(endpoint, options);
     }
@@ -377,32 +491,98 @@ class ApiClient {
       if (this.customProfiles.has(cid)) {
         return Promise.resolve(this.customProfiles.get(cid) as unknown as T);
       }
+      const matched = DATASET_PROFILES.find((p) => p.id === cid);
+      if (matched) {
+        return Promise.resolve(matched as unknown as T);
+      }
       const profile: CustomerProfile = {
         id: cid,
-        first_name: isGold ? 'Aarav' : isIneligible ? 'Rohan' : cid === 'cust_below_bonus' ? 'Dev' : 'Member',
-        last_name: isGold ? 'Patel' : isIneligible ? 'Shah' : cid === 'cust_below_bonus' ? 'Desai' : '',
+        first_name: cid === 'guest' ? 'Guest' : 'Member',
+        last_name: cid === 'guest' ? 'Shopper' : '',
         email: `${cid}@thehub.in`,
         phone: '+91 98250 12345',
-        member_since: '2024-03-15T10:00:00Z',
-        is_hubklub_member: isGold || cid === 'cust_below_bonus',
-        membership_number: isGold ? 'HK-2024-88412' : undefined,
-        tier: isGold ? 'Gold' : undefined,
-        max_single_purchase: isGold ? 32900 : isIneligible ? 850 : 15195,
-        annual_spend_current_year: isGold ? 115595 : 45000,
-        lifetime_spend: isGold ? 178000 : 45000,
-        saved_addresses: [
-          {
-            full_name: 'Aarav Patel',
-            phone: '+91 98250 12345',
-            street: '14 Alkapuri Chambers, R.C. Dutt Road',
-            city: 'Vadodara',
-            state: 'Gujarat',
-            pincode: '390007',
-            country: 'India',
-          },
-        ],
+        member_since: new Date().toISOString(),
+        is_hubklub_member: false,
+        max_single_purchase: 0,
+        annual_spend_current_year: 0,
+        lifetime_spend: 0,
+        saved_addresses: [],
       };
       return Promise.resolve(profile as unknown as T);
+    }
+
+    if (endpoint.includes('/loyalty/balance')) {
+      const isGold = cid === 'cust_demo';
+      const pts = this.customerPoints.get(cid) ?? (isGold ? 3450 : cid === 'cust_below_bonus' ? 1350 : 0);
+      const balance: HubklubBalance = {
+        customer_id: cid,
+        available_points: pts,
+        redemption_value_inr: pts,
+        expiring_soon_points: isGold ? 450 : 0,
+        points_batches: isGold
+          ? [
+              {
+                points: 450,
+                rupee_equivalent: 450,
+                expiry_date: '2026-10-25T11:00:00Z',
+                days_remaining: 8,
+              },
+              {
+                points: 3000,
+                rupee_equivalent: 3000,
+                expiry_date: '2027-02-14T16:45:00Z',
+                days_remaining: 120,
+              },
+            ]
+          : [],
+        is_demo: true,
+      };
+      return Promise.resolve(balance as unknown as T);
+    }
+
+    if (endpoint.includes('/loyalty/transactions')) {
+      const isGold = cid === 'cust_demo';
+      const txs: PointsTransaction[] = isGold
+        ? [
+            {
+              id: 'tx_demo_01',
+              customer_id: cid,
+              type: 'earn',
+              points: 4080,
+              rupee_equivalent: 4080,
+              description: 'Earned 6% on Royal Ivory Tapestry Sherwani Set (₹68,000)',
+              timestamp: '2026-04-18T18:10:00Z',
+              status: 'Active',
+            },
+            {
+              id: 'tx_demo_02',
+              customer_id: cid,
+              type: 'bonus',
+              points: 1024,
+              rupee_equivalent: 1024,
+              description: '20% Annual Bonus for surpassing ₹1,00,000 spend milestone',
+              timestamp: '2026-08-01T00:00:00Z',
+              status: 'Active',
+            },
+          ]
+        : [];
+      return Promise.resolve(txs as unknown as T);
+    }
+
+    if (endpoint.includes('/loyalty/enrollment/demo')) {
+      const status: HubklubMembershipStatus = {
+        customer_id: cid,
+        is_member: true,
+        membership_number: `HK-2026-${Math.floor(10000 + Math.random() * 90000)}`,
+        tier: 'Classic',
+        is_eligible: true,
+        max_single_purchase: 15195,
+        eligibility_threshold: 1000,
+        progress_percent: 100,
+        eligibility_message: 'Congratulations! You are now an active HUBKLUB member.',
+        is_demo: true,
+      };
+      return Promise.resolve(status as unknown as T);
     }
 
     if (endpoint.includes('/loyalty/redemptions/demo')) {
@@ -527,6 +707,8 @@ class ApiClient {
         saved_addresses: [],
       };
       this.customProfiles.set(newId, newCust);
+      this.customProfiles.set(newCust.email.toLowerCase(), newCust);
+      this.setCustomerId(newId);
       return Promise.resolve(newCust as unknown as T);
     }
 
@@ -538,7 +720,7 @@ class ApiClient {
       const idOrEmail = (body.identifier || '').toLowerCase().trim();
       const rawDigits = idOrEmail.replace(/\D/g, '');
 
-      // Check registered custom profiles
+      // Check registered custom profiles (by exact ID, email, or exact 10-digit phone match)
       if (this.customProfiles.has(idOrEmail)) {
         const found = this.customProfiles.get(idOrEmail)!;
         this.setCustomerId(found.id);
@@ -546,136 +728,36 @@ class ApiClient {
       }
       for (const [_, p] of this.customProfiles) {
         const pDigits = (p.phone || '').replace(/\D/g, '');
+        const phoneMatch = rawDigits.length >= 10 && (pDigits === rawDigits || pDigits.endsWith(rawDigits.slice(-10)));
         if (
           p.email.toLowerCase() === idOrEmail ||
           p.id.toLowerCase() === idOrEmail ||
-          (rawDigits.length >= 4 && pDigits.includes(rawDigits))
+          phoneMatch
         ) {
           this.setCustomerId(p.id);
           return Promise.resolve(p as unknown as T);
         }
       }
 
-      // Dataset customers from database (hubklub_app.db)
-      const datasetProfiles: CustomerProfile[] = [
-        {
-          id: 'cust_demo',
-          first_name: 'Aarav',
-          last_name: 'Patel',
-          email: 'aarav.patel@example.com',
-          phone: '+91 98250 12345',
-          member_since: '2024-03-15T10:00:00Z',
-          is_hubklub_member: true,
-          membership_number: 'HK-2024-88412',
-          tier: 'Gold',
-          max_single_purchase: 32900,
-          annual_spend_current_year: 115595,
-          lifetime_spend: 178000,
-          saved_addresses: [
-            {
-              full_name: 'Aarav Patel',
-              phone: '+91 98250 12345',
-              street: '14 Alkapuri Chambers, R.C. Dutt Road',
-              city: 'Vadodara',
-              state: 'Gujarat',
-              pincode: '390007',
-              country: 'India',
-            },
-          ],
-        },
-        {
-          id: 'cust_below_bonus',
-          first_name: 'Dev',
-          last_name: 'Desai',
-          email: 'dev.desai@example.com',
-          phone: '+91 98765 43210',
-          member_since: '2025-01-10T10:00:00Z',
-          is_hubklub_member: true,
-          membership_number: 'HK-2025-10294',
-          tier: 'Classic',
-          max_single_purchase: 15000,
-          annual_spend_current_year: 45000,
-          lifetime_spend: 45000,
-          saved_addresses: [
-            {
-              full_name: 'Dev Desai',
-              phone: '+91 98765 43210',
-              street: '8 Race Course Road, Opp. Inox',
-              city: 'Vadodara',
-              state: 'Gujarat',
-              pincode: '390007',
-              country: 'India',
-            },
-          ],
-        },
-        {
-          id: 'cust_eligible',
-          first_name: 'Vikram',
-          last_name: 'Mehta',
-          email: 'vikram.mehta@example.com',
-          phone: '+91 97240 55443',
-          member_since: '2026-02-01T10:00:00Z',
-          is_hubklub_member: true,
-          membership_number: 'HK-2026-0DE79',
-          tier: 'Classic',
-          max_single_purchase: 15195,
-          annual_spend_current_year: 15195,
-          lifetime_spend: 15195,
-          saved_addresses: [
-            {
-              full_name: 'Vikram Mehta',
-              phone: '+91 97240 55443',
-              street: '22 Sampatrao Colony, Alkapuri',
-              city: 'Vadodara',
-              state: 'Gujarat',
-              pincode: '390007',
-              country: 'India',
-            },
-          ],
-        },
-        {
-          id: 'cust_ineligible',
-          first_name: 'Rohan',
-          last_name: 'Shah',
-          email: 'rohan.shah@example.com',
-          phone: '+91 98980 99887',
-          member_since: '2026-03-01T10:00:00Z',
-          is_hubklub_member: false,
-          membership_number: undefined,
-          tier: 'Classic',
-          max_single_purchase: 850,
-          annual_spend_current_year: 850,
-          lifetime_spend: 850,
-          saved_addresses: [
-            {
-              full_name: 'Rohan Shah',
-              phone: '+91 98980 99887',
-              street: '5 Sayajigunj Tower',
-              city: 'Vadodara',
-              state: 'Gujarat',
-              pincode: '390005',
-              country: 'India',
-            },
-          ],
-        },
-      ];
-
-      // Match by ID, email, membership number, name, or phone digits
-      const matched = datasetProfiles.find((p) => {
+      // Match by ID, email, membership number, or exact 10-digit phone in DATASET_PROFILES
+      const matched = DATASET_PROFILES.find((p) => {
         const pDigits = p.phone.replace(/\D/g, '');
+        const phoneMatch = rawDigits.length >= 10 && (pDigits === rawDigits || pDigits.endsWith(rawDigits.slice(-10)));
         return (
           p.id.toLowerCase() === idOrEmail ||
           p.email.toLowerCase() === idOrEmail ||
           (p.membership_number && p.membership_number.toLowerCase() === idOrEmail) ||
-          p.first_name.toLowerCase() === idOrEmail ||
-          `${p.first_name} ${p.last_name}`.toLowerCase() === idOrEmail ||
-          (rawDigits.length >= 4 && pDigits.includes(rawDigits))
+          phoneMatch
         );
       });
 
-      const profile = matched || datasetProfiles[0];
-      this.setCustomerId(profile.id);
-      return Promise.resolve(profile as unknown as T);
+      if (matched) {
+        this.setCustomerId(matched.id);
+        return Promise.resolve(matched as unknown as T);
+      }
+
+      // If no account exists for this phone number or email, reject login
+      throw new Error('No account found with this mobile number or email. Please create an account first.');
     }
 
     return Promise.resolve({} as unknown as T);

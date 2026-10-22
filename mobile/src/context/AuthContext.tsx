@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { apiClient } from '../api/client';
+import { apiClient, DATASET_PROFILES } from '../api/client';
 import { CustomerProfile } from '../types';
 
 interface AuthContextType {
@@ -9,6 +9,10 @@ interface AuthContextType {
   isMember: boolean;
   isLoading: boolean;
   isLoggedIn: boolean;
+  authModalVisible: boolean;
+  authModalTab: 'signin' | 'create';
+  openAuthModal: (tab?: 'signin' | 'create') => void;
+  closeAuthModal: () => void;
   login: (id: string) => Promise<void>;
   loginByIdentifier: (identifier: string, password?: string) => Promise<void>;
   register: (data: {
@@ -27,10 +31,21 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activeCustomerId, setActiveCustomerId] = useState<string>('cust_demo');
-  const [customerProfile, setCustomerProfile] = useState<CustomerProfile | null>(null);
+  const [customerProfile, setCustomerProfile] = useState<CustomerProfile | null>(DATASET_PROFILES[0]);
   const [pointsBalance, setPointsBalance] = useState<number>(3450);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(true);
+  const [authModalVisible, setAuthModalVisible] = useState<boolean>(false);
+  const [authModalTab, setAuthModalTab] = useState<'signin' | 'create'>('signin');
+
+  const openAuthModal = (tab: 'signin' | 'create' = 'signin') => {
+    setAuthModalTab(tab);
+    setAuthModalVisible(true);
+  };
+
+  const closeAuthModal = () => {
+    setAuthModalVisible(false);
+  };
 
   const fetchProfile = async (id: string) => {
     setIsLoading(true);
@@ -40,13 +55,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         apiClient.getProfile(),
         apiClient.getLoyaltyBalance(),
       ]);
-      if (profile.status === 'fulfilled') {
+      if (profile.status === 'fulfilled' && profile.value && profile.value.id) {
         setCustomerProfile(profile.value);
       }
-      if (balance.status === 'fulfilled' && balance.value) {
+      if (
+        balance.status === 'fulfilled' &&
+        balance.value &&
+        typeof balance.value.available_points === 'number'
+      ) {
         setPointsBalance(balance.value.available_points);
       } else {
-        setPointsBalance(apiClient.getPointsBalance(id));
+        setPointsBalance(apiClient.getPointsBalance(id) ?? 0);
       }
     } catch (e) {
       console.log('Failed to fetch profile/balance', e);
@@ -132,6 +151,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isMember,
         isLoading,
         isLoggedIn,
+        authModalVisible,
+        authModalTab,
+        openAuthModal,
+        closeAuthModal,
         login,
         loginByIdentifier,
         register,
@@ -150,4 +173,5 @@ export const useAuth = () => {
   if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 };
+
 

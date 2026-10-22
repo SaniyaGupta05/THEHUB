@@ -3,7 +3,7 @@ import { View, StyleSheet, TouchableOpacity, Text, StatusBar, LogBox } from 'rea
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from './src/context/AuthContext';
+import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { CartProvider } from './src/context/CartContext';
 import { WishlistProvider, useWishlist } from './src/context/WishlistContext';
 import { Header } from './src/components/Header';
@@ -29,6 +29,7 @@ function MainAppContent() {
   const [showCart, setShowCart] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const { wishlist } = useWishlist();
+  const { openAuthModal } = useAuth();
 
   const handleNavigateCategories = (category?: string) => {
     setSelectedCategoryFilter(category);
@@ -193,7 +194,10 @@ function MainAppContent() {
       <OnboardingModal
         visible={showOnboarding}
         onClose={() => setShowOnboarding(false)}
-        onSignInPress={() => setActiveTab('account')}
+        onSignInPress={() => {
+          setActiveTab('account');
+          openAuthModal('signin');
+        }}
       />
     </SafeAreaView>
   );

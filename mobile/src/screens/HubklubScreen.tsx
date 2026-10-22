@@ -23,7 +23,7 @@ type HubklubView =
   | 'expiry'; // Screen 18
 
 export const HubklubScreen: React.FC = () => {
-  const { activeCustomerId, refreshProfile } = useAuth();
+  const { activeCustomerId, refreshProfile, openAuthModal } = useAuth();
   const [activeView, setActiveView] = useState<HubklubView>('dashboard');
   const [summary, setSummary] = useState<HubklubSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -120,7 +120,7 @@ export const HubklubScreen: React.FC = () => {
             <Text style={styles.alreadyMemberSub}>Sign in to view your benefits.</Text>
             <TouchableOpacity
               style={styles.signInLinkBtn}
-              onPress={() => setActiveView('dashboard')}
+              onPress={() => openAuthModal('signin')}
             >
               <Text style={styles.signInLinkText}>Sign In</Text>
             </TouchableOpacity>

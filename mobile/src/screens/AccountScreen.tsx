@@ -10,6 +10,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,14 +31,17 @@ export const AccountScreen: React.FC = () => {
     logout,
     pointsBalance,
     isMember,
+    authModalVisible,
+    authModalTab,
+    openAuthModal,
+    closeAuthModal,
   } = useAuth();
 
   const [orders, setOrders] = useState<Order[]>([]);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authTab, setAuthTab] = useState<'create' | 'signin'>('create');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [activeSubView, setActiveSubView] = useState<'menu' | 'orders'>('menu');
   const [orderFilter, setOrderFilter] = useState<'All' | 'Processing' | 'Delivered'>('All');
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // Registration Form State
   const [regFirstName, setRegFirstName] = useState('');
@@ -74,16 +78,23 @@ export const AccountScreen: React.FC = () => {
   };
 
   const handleCreateAccount = async () => {
+    setAuthError(null);
     if (!regFirstName.trim() || !regLastName.trim()) {
-      Alert.alert('Required Fields', 'Please enter both your first name and last name.');
+      const msg = 'Please enter both your first name and last name.';
+      setAuthError(msg);
+      Alert.alert('Required Fields', msg);
       return;
     }
     if (!regEmail.trim() || !regEmail.includes('@')) {
-      Alert.alert('Invalid Email', 'Please enter a valid email address.');
+      const msg = 'Please enter a valid email address.';
+      setAuthError(msg);
+      Alert.alert('Invalid Email', msg);
       return;
     }
     if (!regPhone.trim()) {
-      Alert.alert('Required Field', 'Please enter your mobile phone number.');
+      const msg = 'Please enter your mobile phone number.';
+      setAuthError(msg);
+      Alert.alert('Required Field', msg);
       return;
     }
 
@@ -95,32 +106,39 @@ export const AccountScreen: React.FC = () => {
         email: regEmail.trim(),
         phone: regPhone.trim(),
       });
-      setShowAuthModal(false);
+      closeAuthModal();
       setRegFirstName('');
       setRegLastName('');
       setRegEmail('');
       setRegPhone('');
       Alert.alert('Account Created!', `Welcome to THE HUB, ${regFirstName.trim()}! Your account has been created successfully.`);
     } catch (err: any) {
-      Alert.alert('Registration Failed', err.message || 'Unable to create account. Please try again.');
+      const msg = err.message || 'Unable to create account. Please try again.';
+      setAuthError(msg);
+      Alert.alert('Registration Failed', msg);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleIdentifierLogin = async () => {
+    setAuthError(null);
     if (!loginIdentifier.trim()) {
-      Alert.alert('Required Field', 'Please enter your email, mobile number, or customer ID.');
+      const msg = 'Please enter your email, mobile number, or customer ID.';
+      setAuthError(msg);
+      Alert.alert('Required Field', msg);
       return;
     }
     setIsSubmitting(true);
     try {
       await loginByIdentifier(loginIdentifier.trim());
-      setShowAuthModal(false);
+      closeAuthModal();
       setLoginIdentifier('');
       Alert.alert('Welcome Back!', 'You have successfully signed in.');
     } catch (err: any) {
-      Alert.alert('Sign In Failed', err.message || 'No account found with this identifier.');
+      const msg = err.message || 'No account found with this identifier.';
+      setAuthError(msg);
+      Alert.alert('Sign In Failed', msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -182,10 +200,7 @@ export const AccountScreen: React.FC = () => {
               <Text style={styles.emptyOrdersSub}>Your order history and live parcel tracking are linked to your account.</Text>
               <TouchableOpacity
                 style={styles.signInPrimaryBtn}
-                onPress={() => {
-                  setAuthTab('signin');
-                  setShowAuthModal(true);
-                }}
+                onPress={() => openAuthModal('signin')}
               >
                 <Text style={styles.signInPrimaryBtnText}>Sign In / Register</Text>
               </TouchableOpacity>
@@ -269,20 +284,14 @@ export const AccountScreen: React.FC = () => {
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <TouchableOpacity
                 style={styles.guestCreateBtn}
-                onPress={() => {
-                  setAuthTab('create');
-                  setShowAuthModal(true);
-                }}
+                onPress={() => openAuthModal('create')}
                 activeOpacity={0.85}
               >
                 <Text style={styles.guestCreateBtnText}>Create Account</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.guestSignInBtn}
-                onPress={() => {
-                  setAuthTab('signin');
-                  setShowAuthModal(true);
-                }}
+                onPress={() => openAuthModal('signin')}
                 activeOpacity={0.85}
               >
                 <Text style={styles.guestSignInBtnText}>Sign In</Text>
@@ -296,10 +305,7 @@ export const AccountScreen: React.FC = () => {
           {/* 1. Profile & Settings / Create or Switch Persona */}
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => {
-              setAuthTab(isGuest ? 'create' : 'signin');
-              setShowAuthModal(true);
-            }}
+            onPress={() => openAuthModal(isGuest ? 'create' : 'signin')}
             activeOpacity={0.7}
           >
             <View style={styles.menuItemLeft}>
@@ -319,8 +325,7 @@ export const AccountScreen: React.FC = () => {
             style={styles.menuItem}
             onPress={() => {
               if (isGuest) {
-                setAuthTab('signin');
-                setShowAuthModal(true);
+                openAuthModal('signin');
               } else {
                 Alert.alert('Saved Addresses', '123, Green Park, New Delhi - 110016\nContact: +91 98765 43210');
               }
@@ -403,16 +408,13 @@ export const AccountScreen: React.FC = () => {
           {isGuest ? (
             <TouchableOpacity
               style={[styles.menuItem, styles.menuItemSignIn]}
-              onPress={() => {
-                setAuthTab('create');
-                setShowAuthModal(true);
-              }}
+              onPress={() => openAuthModal('signin')}
               activeOpacity={0.7}
             >
               <View style={styles.menuItemLeft}>
-                <Ionicons name="person-add-outline" size={20} color="#C5A880" />
+                <Ionicons name="log-in-outline" size={20} color="#C5A880" />
                 <Text style={[styles.menuItemLabel, { color: '#C5A880', fontWeight: '700' }]}>
-                  Create Account / Sign In
+                  Sign In / Create Account
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color="#C5A880" />
@@ -473,10 +475,10 @@ export const AccountScreen: React.FC = () => {
 
       {/* Authentication & Create Account Modal */}
       <Modal
-        visible={showAuthModal}
+        visible={authModalVisible}
         transparent
         animationType="slide"
-        onRequestClose={() => setShowAuthModal(false)}
+        onRequestClose={closeAuthModal}
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -486,9 +488,9 @@ export const AccountScreen: React.FC = () => {
             {/* Modal Header */}
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                {authTab === 'create' ? 'Create New Account' : 'Sign In to THE HUB'}
+                {authModalTab === 'create' ? 'Create New Account' : 'Sign In to THE HUB'}
               </Text>
-              <TouchableOpacity onPress={() => setShowAuthModal(false)}>
+              <TouchableOpacity onPress={closeAuthModal}>
                 <Ionicons name="close" size={24} color="#111111" />
               </TouchableOpacity>
             </View>
@@ -496,18 +498,24 @@ export const AccountScreen: React.FC = () => {
             {/* Segmented Tab Controls: [Create Account] | [Sign In] */}
             <View style={styles.tabToggleRow}>
               <TouchableOpacity
-                style={[styles.tabToggleBtn, authTab === 'create' && styles.tabToggleBtnActive]}
-                onPress={() => setAuthTab('create')}
+                style={[styles.tabToggleBtn, authModalTab === 'create' && styles.tabToggleBtnActive]}
+                onPress={() => {
+                  setAuthError(null);
+                  openAuthModal('create');
+                }}
               >
-                <Text style={[styles.tabToggleText, authTab === 'create' && styles.tabToggleTextActive]}>
+                <Text style={[styles.tabToggleText, authModalTab === 'create' && styles.tabToggleTextActive]}>
                   Create Account
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.tabToggleBtn, authTab === 'signin' && styles.tabToggleBtnActive]}
-                onPress={() => setAuthTab('signin')}
+                style={[styles.tabToggleBtn, authModalTab === 'signin' && styles.tabToggleBtnActive]}
+                onPress={() => {
+                  setAuthError(null);
+                  openAuthModal('signin');
+                }}
               >
-                <Text style={[styles.tabToggleText, authTab === 'signin' && styles.tabToggleTextActive]}>
+                <Text style={[styles.tabToggleText, authModalTab === 'signin' && styles.tabToggleTextActive]}>
                   Sign In / Personas
                 </Text>
               </TouchableOpacity>
@@ -515,11 +523,18 @@ export const AccountScreen: React.FC = () => {
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
               {/* TAB 1: CREATE ACCOUNT FORM */}
-              {authTab === 'create' ? (
+              {authModalTab === 'create' ? (
                 <View style={styles.formContainer}>
                   <Text style={styles.formSubtitle}>
                     Join THE HUB & activate your exclusive HUBKLUB loyalty membership.
                   </Text>
+
+                  {authError && (
+                    <View style={styles.authErrorBox}>
+                      <Ionicons name="alert-circle-outline" size={16} color="#D32F2F" />
+                      <Text style={styles.authErrorText}>{authError}</Text>
+                    </View>
+                  )}
 
                   {/* First Name & Last Name */}
                   <View style={styles.inputRow}>
@@ -530,7 +545,10 @@ export const AccountScreen: React.FC = () => {
                         placeholder="e.g. Priya"
                         placeholderTextColor="#A0A0A0"
                         value={regFirstName}
-                        onChangeText={setRegFirstName}
+                        onChangeText={(v) => {
+                          setRegFirstName(v);
+                          if (authError) setAuthError(null);
+                        }}
                       />
                     </View>
                     <View style={{ flex: 1 }}>
@@ -540,7 +558,10 @@ export const AccountScreen: React.FC = () => {
                         placeholder="e.g. Sharma"
                         placeholderTextColor="#A0A0A0"
                         value={regLastName}
-                        onChangeText={setRegLastName}
+                        onChangeText={(v) => {
+                          setRegLastName(v);
+                          if (authError) setAuthError(null);
+                        }}
                       />
                     </View>
                   </View>
@@ -555,7 +576,10 @@ export const AccountScreen: React.FC = () => {
                       keyboardType="email-address"
                       autoCapitalize="none"
                       value={regEmail}
-                      onChangeText={setRegEmail}
+                      onChangeText={(v) => {
+                        setRegEmail(v);
+                        if (authError) setAuthError(null);
+                      }}
                     />
                   </View>
 
@@ -568,7 +592,10 @@ export const AccountScreen: React.FC = () => {
                       placeholderTextColor="#A0A0A0"
                       keyboardType="phone-pad"
                       value={regPhone}
-                      onChangeText={setRegPhone}
+                      onChangeText={(v) => {
+                        setRegPhone(v);
+                        if (authError) setAuthError(null);
+                      }}
                     />
                   </View>
 
@@ -595,43 +622,69 @@ export const AccountScreen: React.FC = () => {
                     disabled={isSubmitting}
                     activeOpacity={0.85}
                   >
-                    <Text style={styles.primaryActionBtnText}>
-                      {isSubmitting ? 'Creating Account...' : 'Create Account & Join THE HUB'}
-                    </Text>
+                    {isSubmitting ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                        <Text style={styles.primaryActionBtnText}>Creating Account...</Text>
+                      </View>
+                    ) : (
+                      <Text style={styles.primaryActionBtnText}>Create Account & Join THE HUB</Text>
+                    )}
                   </TouchableOpacity>
                 </View>
               ) : (
                 /* TAB 2: SIGN IN & DEMO PERSONAS */
                 <View style={styles.formContainer}>
                   <Text style={styles.formSubtitle}>
-                    Enter your email/phone or choose a pre-configured demo account:
+                    Enter your email, phone, or select a pre-configured persona:
                   </Text>
+
+                  {authError && (
+                    <View style={styles.authErrorBox}>
+                      <Ionicons name="alert-circle-outline" size={16} color="#D32F2F" />
+                      <Text style={styles.authErrorText}>{authError}</Text>
+                    </View>
+                  )}
 
                   {/* Direct Identifier Login */}
                   <View style={styles.inputGroup}>
-                    <Text style={styles.inputLabel}>Email or Phone Number</Text>
-                    <View style={styles.loginInputRow}>
-                      <TextInput
-                        style={[styles.textInput, { flex: 1 }]}
-                        placeholder="e.g. demo@thehub.in or +91 98765..."
-                        placeholderTextColor="#A0A0A0"
-                        value={loginIdentifier}
-                        onChangeText={setLoginIdentifier}
-                        autoCapitalize="none"
-                      />
-                      <TouchableOpacity
-                        style={styles.inlineSignInBtn}
-                        onPress={handleIdentifierLogin}
-                        disabled={isSubmitting}
-                      >
-                        <Text style={styles.inlineSignInBtnText}>Sign In</Text>
-                      </TouchableOpacity>
-                    </View>
+                    <Text style={styles.inputLabel}>Email or Mobile Number</Text>
+                    <TextInput
+                      style={styles.textInput}
+                      placeholder="e.g. aarav.patel@example.com or +91 98250 12345"
+                      placeholderTextColor="#A0A0A0"
+                      value={loginIdentifier}
+                      onChangeText={(val) => {
+                        setLoginIdentifier(val);
+                        if (authError) setAuthError(null);
+                      }}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      returnKeyType="done"
+                      onSubmitEditing={handleIdentifierLogin}
+                    />
                   </View>
+
+                  {/* High visibility Sign In Action Button */}
+                  <TouchableOpacity
+                    style={[styles.primaryActionBtn, isSubmitting && { opacity: 0.7 }]}
+                    onPress={handleIdentifierLogin}
+                    disabled={isSubmitting}
+                    activeOpacity={0.85}
+                  >
+                    {isSubmitting ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                        <Text style={styles.primaryActionBtnText}>Signing In...</Text>
+                      </View>
+                    ) : (
+                      <Text style={styles.primaryActionBtnText}>Sign In to THE HUB</Text>
+                    )}
+                  </TouchableOpacity>
 
                   <View style={styles.dividerRow}>
                     <View style={styles.dividerLine} />
-                    <Text style={styles.dividerText}>OR SELECT DEMO PERSONA</Text>
+                    <Text style={styles.dividerText}>OR QUICK DEMO PERSONAS</Text>
                     <View style={styles.dividerLine} />
                   </View>
 
@@ -645,8 +698,9 @@ export const AccountScreen: React.FC = () => {
                           isSelected && styles.personaOptionSelected,
                         ]}
                         onPress={async () => {
+                          setAuthError(null);
                           await login(persona.id);
-                          setShowAuthModal(false);
+                          closeAuthModal();
                         }}
                         activeOpacity={0.8}
                       >
@@ -1056,6 +1110,25 @@ const styles = StyleSheet.create({
   benefitText: {
     fontSize: 12,
     color: '#444444',
+  },
+  authErrorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FFEBEE',
+    borderWidth: 1,
+    borderColor: '#FFCDD2',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginTop: 2,
+    marginBottom: 4,
+  },
+  authErrorText: {
+    color: '#D32F2F',
+    fontSize: 12,
+    fontWeight: '600',
+    flex: 1,
   },
   primaryActionBtn: {
     backgroundColor: '#111111',
