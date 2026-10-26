@@ -14,7 +14,7 @@ from app.models.schemas import (
     Address,
 )
 from app.db.session import SessionLocal
-from app.db.models import DBProduct, DBProductVariant, DBCollection, DBCart, DBOrder
+from app.db.models import DBProduct, DBProductVariant, DBCollection, DBCart, DBOrder, DBStaffInvoice, DBCustomer
 from app.config import settings
 
 def _ensure_utc(dt: Optional[datetime]) -> Optional[datetime]:
@@ -375,7 +375,10 @@ class DBShopifyAdapter(ShopifyAdapterBase):
                 .all()
             )
             results = []
+            existing_numbers = set()
+
             for o in db_orders:
+                existing_numbers.add(o.order_number)
                 items = [OrderItem(**i) for i in (o.items or [])]
                 addr = Address(**(o.shipping_address or {
                     "full_name": "Customer",
@@ -405,6 +408,65 @@ class DBShopifyAdapter(ShopifyAdapterBase):
                         is_demo=o.is_demo,
                     )
                 )
+
+            # 2. Also fetch all in-store POS bills / invoices created for this customer
+            c = db.query(DBCustomer).filter(DBCustomer.id == customer_id).first()
+            phone_digits = "".join(ch for ch in (c.phone or "") if ch.isdigit()) if c else ""
+
+            all_invoices = db.query(DBStaffInvoice).order_by(DBStaffInvoice.timestamp.desc()).all()
+
+            for inv in all_invoices:
+                # Check match by customer_id or phone number digits
+                is_match = False
+                if inv.customer_id == customer_id:
+                    is_match = True
+                elif phone_digits and len(phone_digits) >= 10:
+                    inv_digits = "".join(ch for ch in (inv.customer_phone or "") if ch.isdigit())
+                    if len(inv_digits) >= 10 and inv_digits[-10:] == phone_digits[-10:]:
+                        is_match = True
+
+                if is_match and inv.invoice_number not in existing_numbers:
+                    existing_numbers.add(inv.invoice_number)
+                    store_addr = Address(
+                        full_name=inv.customer_name or (f"{c.first_name} {c.last_name}" if c else "Customer"),
+                        phone=inv.customer_phone or (c.phone if c else ""),
+                        street="THE HUB • In-Store Counter (RC Dutt Road)",
+                        city="Vadodara",
+                        state="Gujarat",
+                        pincode="390007",
+                        country="India"
+                    )
+                    results.append(
+                        Order(
+                            id=inv.id,
+                            order_number=inv.invoice_number,
+                            customer_id=customer_id,
+                            items=[
+                                OrderItem(
+                                    product_id="store_pos_item",
+                                    variant_id="store_pos_var",
+                                    product_title="In-Store Retail Purchase (THE HUB Vadodara)",
+                                    quantity=1,
+                                    unit_price=inv.gross_amount,
+                                    total_price=inv.gross_amount,
+                                )
+                            ],
+                            subtotal=inv.gross_amount,
+                            tax=0.0,
+                            shipping=0.0,
+                            discount_amount=inv.loyalty_discount_inr or 0.0,
+                            points_redeemed=inv.points_redeemed or 0,
+                            points_earned_estimated=inv.points_earned_this_bill or 0,
+                            total_amount=inv.net_payable,
+                            status="Delivered",
+                            shipping_address=store_addr,
+                            created_at=_ensure_utc(inv.timestamp) or datetime.now(timezone.utc),
+                            is_demo=False,
+                        )
+                    )
+
+            # Sort combined orders chronologically descending
+            results.sort(key=lambda x: x.created_at or datetime.min.replace(tzinfo=timezone.utc), reverse=True)
             return results
         finally:
             db.close()

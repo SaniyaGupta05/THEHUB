@@ -12,6 +12,7 @@ import {
   Platform,
   ActivityIndicator,
   Switch,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -136,23 +137,31 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ onNavigateTab }) =
   };
 
   const isGuest = !isLoggedIn || activeCustomerId === 'guest' || !customerProfile;
+  const [isRefreshingOrders, setIsRefreshingOrders] = useState(false);
 
-  useEffect(() => {
+  const fetchOrders = async () => {
     if (isGuest) {
       setOrders([]);
       return;
     }
-    const fetchOrders = async () => {
-      try {
-        const data = await apiClient.getOrders();
-        setOrders(Array.isArray(data) ? data : []);
-      } catch (e) {
-        console.warn('Failed to load orders', e);
-        setOrders([]);
-      }
-    };
+    try {
+      const data = await apiClient.getOrders();
+      setOrders(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.warn('Failed to load orders', e);
+      setOrders([]);
+    }
+  };
+
+  useEffect(() => {
     fetchOrders();
-  }, [activeCustomerId, isLoggedIn, isGuest]);
+  }, [activeCustomerId, isLoggedIn, isGuest, activeSubView]);
+
+  const onRefreshOrders = async () => {
+    setIsRefreshingOrders(true);
+    await fetchOrders();
+    setIsRefreshingOrders(false);
+  };
 
   const handleLogoutConfirm = () => {
     setShowLogoutConfirm(false);
@@ -175,7 +184,9 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ onNavigateTab }) =
     if (!ord) return false;
     const status = (ord.status || '').toLowerCase();
     if (orderFilter === 'All') return true;
-    if (orderFilter === 'Delivered') return status.includes('delivered') || status.includes('confirmed');
+    if (orderFilter === 'Delivered') {
+      return status.includes('delivered') || status.includes('confirmed') || status.includes('completed') || status.includes('synced');
+    }
     if (orderFilter === 'Processing') return status.includes('processing') || status.includes('shipped');
     return true;
   });
@@ -208,12 +219,18 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ onNavigateTab }) =
           ))}
         </View>
 
-        <ScrollView contentContainerStyle={styles.ordersScrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.ordersScrollContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={isRefreshingOrders} onRefresh={onRefreshOrders} tintColor="#C5A880" />
+          }
+        >
           {isGuest ? (
             <View style={styles.emptyOrders}>
               <Ionicons name="lock-closed-outline" size={48} color="#C5A880" />
               <Text style={styles.emptyOrdersTitle}>Sign In to View Orders</Text>
-              <Text style={styles.emptyOrdersSub}>Your order history and live parcel tracking are linked to your account.</Text>
+              <Text style={styles.emptyOrdersSub}>Your store bills, receipts, and order history are linked to your account.</Text>
               <TouchableOpacity
                 style={styles.signInPrimaryBtn}
                 onPress={() => openAuthModal('signin')}
@@ -225,20 +242,24 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ onNavigateTab }) =
             <View style={styles.emptyOrders}>
               <Ionicons name="receipt-outline" size={48} color="#CCC" />
               <Text style={styles.emptyOrdersTitle}>No orders in this category</Text>
-              <Text style={styles.emptyOrdersSub}>Orders you place will appear here with live tracking.</Text>
+              <Text style={styles.emptyOrdersSub}>In-store bills and online purchases will automatically appear here with point credits.</Text>
             </View>
           ) : (
             filteredOrders.map((ord) => {
-              const isDelivered = ord.status.toLowerCase().includes('delivered') || ord.status.toLowerCase().includes('confirmed');
+              const isStoreBill = ord.order_number.startsWith('HUB-POS') || ord.id.startsWith('inv_');
+              const isDelivered = ord.status.toLowerCase().includes('delivered') || ord.status.toLowerCase().includes('confirmed') || ord.status.toLowerCase().includes('completed') || ord.status.toLowerCase().includes('synced');
               const isShipped = ord.status.toLowerCase().includes('shipped');
-              const statusPillStyle = isDelivered ? styles.pillDelivered : isShipped ? styles.pillShipped : styles.pillProcessing;
-              const statusTextStyle = isDelivered ? styles.pillTextDelivered : isShipped ? styles.pillTextShipped : styles.pillTextProcessing;
-              const statusLabel = isDelivered ? 'Delivered' : isShipped ? 'Shipped' : 'Processing';
+              const statusPillStyle = isStoreBill ? styles.pillStoreBill : isDelivered ? styles.pillDelivered : isShipped ? styles.pillShipped : styles.pillProcessing;
+              const statusTextStyle = isStoreBill ? styles.pillTextStoreBill : isDelivered ? styles.pillTextDelivered : isShipped ? styles.pillTextShipped : styles.pillTextProcessing;
+              const statusLabel = isStoreBill ? 'In-Store Bill' : isDelivered ? 'Delivered' : isShipped ? 'Shipped' : 'Processing';
 
               return (
                 <View key={ord.id} style={styles.orderCard}>
                   <View style={styles.orderTopRow}>
-                    <Text style={styles.orderIdText}>#{ord.order_number}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      {isStoreBill && <Ionicons name="storefront-outline" size={16} color="#C5A880" />}
+                      <Text style={styles.orderIdText}>#{ord.order_number}</Text>
+                    </View>
                     <View style={[styles.statusPill, statusPillStyle]}>
                       <Text style={[styles.statusPillText, statusTextStyle]}>{statusLabel}</Text>
                     </View>
@@ -249,7 +270,25 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ onNavigateTab }) =
                     • ₹ {new Intl.NumberFormat('en-IN').format(ord.total_amount)}
                   </Text>
 
-                  <Text style={styles.demoOrderTag}>Demo Order</Text>
+                  {ord.items && ord.items.length > 0 && (
+                    <Text style={{ fontSize: 12, color: '#555555', marginTop: 4 }}>
+                      {ord.items.map((i) => i.product_title).join(', ')}
+                    </Text>
+                  )}
+
+                  <View style={styles.orderBottomBar}>
+                    <Text style={styles.orderStoreTag}>
+                      {isStoreBill ? 'THE HUB • Vadodara Store Counter' : 'Online Store Order'}
+                    </Text>
+                    {Boolean(ord.points_earned_estimated && ord.points_earned_estimated > 0) && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <Ionicons name="sparkles" size={12} color="#C5A880" />
+                        <Text style={styles.orderPointsTag}>
+                          +{ord.points_earned_estimated} pts earned
+                        </Text>
+                      </View>
+                    )}
+                  </View>
                 </View>
               );
             })
@@ -685,7 +724,7 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ onNavigateTab }) =
             <Ionicons name="chevron-forward" size={18} color="#C7C7CC" />
           </TouchableOpacity>
 
-          {/* 3. Order History */}
+          {/* 3. Order History & In-Store Bills */}
           <TouchableOpacity
             style={styles.menuItem}
             onPress={() => setActiveSubView('orders')}
@@ -693,7 +732,10 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ onNavigateTab }) =
           >
             <View style={styles.menuItemLeft}>
               <Ionicons name="receipt-outline" size={20} color="#111111" />
-              <Text style={styles.menuItemLabel}>Order History</Text>
+              <View>
+                <Text style={styles.menuItemLabel}>My Orders & Store Bills</Text>
+                <Text style={styles.menuItemSublabel}>In-store billing receipts & online tracking</Text>
+              </View>
             </View>
             <Ionicons name="chevron-forward" size={18} color="#C7C7CC" />
           </TouchableOpacity>
@@ -1131,6 +1173,15 @@ const styles = StyleSheet.create({
   pillTextProcessing: {
     color: '#E65100',
   },
+  pillStoreBill: {
+    backgroundColor: '#FAF5ED',
+    borderWidth: 1,
+    borderColor: '#E8DBC5',
+  },
+  pillTextStoreBill: {
+    color: '#9C7A4A',
+    fontWeight: '700',
+  },
   orderMetaText: {
     fontSize: 12,
     color: '#666666',
@@ -1139,6 +1190,25 @@ const styles = StyleSheet.create({
   demoOrderTag: {
     fontSize: 11,
     color: '#8E8E93',
+  },
+  orderBottomBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F5F5F7',
+  },
+  orderStoreTag: {
+    fontSize: 11,
+    color: '#8E8E93',
+    fontWeight: '500',
+  },
+  orderPointsTag: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#C5A880',
   },
 
   // Modal Common Styles

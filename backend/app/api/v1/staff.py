@@ -7,8 +7,7 @@ from fastapi import APIRouter, HTTPException, Depends, Header, Body
 from pydantic import BaseModel, Field
 from app.services.loyalty_service import loyalty_service
 from app.config import settings
-from app.db.session import SessionLocal
-from app.db.models import DBStaffInvoice, DBStaffUser, DBCustomer, DBPointsTransaction
+from app.db.models import DBStaffInvoice, DBStaffUser, DBCustomer, DBPointsTransaction, DBOrder
 
 router = APIRouter(prefix="/staff", tags=["Store Staff & Billing Counter"])
 
@@ -272,6 +271,43 @@ def process_billing_counter_invoice(req: ProcessInvoiceRequest):
             timestamp=datetime.now(timezone.utc),
         )
         db.add(db_inv)
+
+        # Also insert a DBOrder record so this in-store retail bill is immediately visible under the customer's orders
+        db_order = DBOrder(
+            id=f"ord_pos_{uuid.uuid4().hex[:10]}",
+            order_number=invoice_no,
+            customer_id=cid,
+            items=[{
+                "product_id": "store_pos_item",
+                "variant_id": "store_pos_var",
+                "product_title": "In-Store Retail Purchase (THE HUB Vadodara)",
+                "quantity": 1,
+                "unit_price": gross,
+                "total_price": gross,
+            }],
+            subtotal=gross,
+            tax=0.0,
+            shipping=0.0,
+            discount_amount=loyalty_discount,
+            points_redeemed=points_redeemed,
+            points_earned_estimated=pts_earned,
+            total_amount=net_payable,
+            status="Delivered",
+            payment_method=req.payment_method,
+            shipping_address={
+                "full_name": f"{customer.first_name} {customer.last_name}" if customer else "Customer",
+                "phone": customer.phone if customer else "+91 98250 12345",
+                "street": "THE HUB • In-Store POS (RC Dutt Road)",
+                "city": "Vadodara",
+                "state": "Gujarat",
+                "pincode": "390007",
+                "country": "India"
+            },
+            channel="in_store_pos",
+            created_at=datetime.now(timezone.utc),
+            is_demo=False,
+        )
+        db.add(db_order)
         db.commit()
     except Exception as e:
         db.rollback()
