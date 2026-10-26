@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { CheckoutModal } from './CheckoutModal';
 import { Order } from '../types';
 
@@ -33,14 +34,31 @@ export const CartModal: React.FC<CartModalProps> = ({
     updateQuantity,
     removeItem,
     clearCart,
-    total,
+    loyaltyDiscount,
+    redeemedPoints,
+    applyLoyaltyDiscount,
   } = useCart();
+  const { pointsBalance } = useAuth();
   const [showCheckout, setShowCheckout] = useState(false);
   const [couponApplied, setCouponApplied] = useState(false);
 
+  const couponDiscount = couponApplied ? Math.round(subtotal * 0.1) : 0;
+  const currentTotal = Math.max(0, subtotal + shippingFee - loyaltyDiscount - couponDiscount);
+
   const formattedSubtotal = `₹ ${new Intl.NumberFormat('en-IN').format(subtotal)}`;
   const formattedShipping = shippingFee === 0 ? '₹ 0' : `₹ ${shippingFee}`;
-  const formattedTotal = `₹ ${new Intl.NumberFormat('en-IN').format(total)}`;
+  const formattedCoupon = `- ₹ ${new Intl.NumberFormat('en-IN').format(couponDiscount)}`;
+  const formattedLoyalty = `- ₹ ${new Intl.NumberFormat('en-IN').format(loyaltyDiscount)}`;
+  const formattedTotal = `₹ ${new Intl.NumberFormat('en-IN').format(currentTotal)}`;
+
+  const handleTogglePoints = () => {
+    if (redeemedPoints > 0) {
+      applyLoyaltyDiscount(0);
+    } else {
+      const maxPts = Math.min(pointsBalance, subtotal);
+      applyLoyaltyDiscount(maxPts);
+    }
+  };
 
   const handleClearCart = () => {
     Alert.alert('Clear Bag', 'Are you sure you want to remove all items from your cart?', [
@@ -82,63 +100,102 @@ export const CartModal: React.FC<CartModalProps> = ({
           <>
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
               {/* Cart Items List */}
-              {items.map((item) => (
-                <View key={item.variant_id} style={styles.itemRow}>
-                  <Image source={{ uri: item.image }} style={styles.itemThumb} resizeMode="cover" />
+              {items.map((item) => {
+                const itemId = item.id || item.variant_id;
+                return (
+                  <View key={itemId} style={styles.itemRow}>
+                    <Image source={{ uri: item.image }} style={styles.itemThumb} resizeMode="cover" />
 
-                  <View style={styles.itemInfo}>
-                    <View style={styles.titleRow}>
-                      <Text style={styles.itemTitle} numberOfLines={1}>{item.product_title}</Text>
-                      <TouchableOpacity onPress={() => removeItem(item.variant_id)} style={styles.itemTrashBtn}>
-                        <Ionicons name="trash-outline" size={16} color="#8E8E93" />
-                      </TouchableOpacity>
-                    </View>
+                    <View style={styles.itemInfo}>
+                      <View style={styles.titleRow}>
+                        <Text style={styles.itemTitle} numberOfLines={1}>{item.product_title}</Text>
+                        <TouchableOpacity onPress={() => removeItem(itemId)} style={styles.itemTrashBtn}>
+                          <Ionicons name="trash-outline" size={16} color="#8E8E93" />
+                        </TouchableOpacity>
+                      </View>
 
-                    <Text style={styles.variantText}>
-                      {item.color || 'Standard'} | {item.size || 'M'}
-                    </Text>
-
-                    <View style={styles.priceAndStepperRow}>
-                      <Text style={styles.itemPrice}>
-                        ₹ {new Intl.NumberFormat('en-IN').format(item.price)}
+                      <Text style={styles.variantText}>
+                        {item.color || 'Standard'} | {item.size || 'M'}
                       </Text>
 
-                      <View style={styles.stepperContainer}>
-                        <TouchableOpacity
-                          style={styles.stepperBtn}
-                          onPress={() => updateQuantity(item.variant_id, item.quantity - 1)}
-                        >
-                          <Ionicons name="remove" size={14} color="#111111" />
-                        </TouchableOpacity>
+                      <View style={styles.priceAndStepperRow}>
+                        <Text style={styles.itemPrice}>
+                          ₹ {new Intl.NumberFormat('en-IN').format(item.price)}
+                        </Text>
 
-                        <Text style={styles.stepperQuantity}>{item.quantity}</Text>
+                        <View style={styles.stepperContainer}>
+                          <TouchableOpacity
+                            style={styles.stepperBtn}
+                            onPress={() => updateQuantity(itemId, item.quantity - 1)}
+                          >
+                            <Ionicons name="remove" size={14} color="#111111" />
+                          </TouchableOpacity>
 
-                        <TouchableOpacity
-                          style={styles.stepperBtn}
-                          onPress={() => updateQuantity(item.variant_id, item.quantity + 1)}
-                        >
-                          <Ionicons name="add" size={14} color="#111111" />
-                        </TouchableOpacity>
+                          <Text style={styles.stepperQuantity}>{item.quantity}</Text>
+
+                          <TouchableOpacity
+                            style={styles.stepperBtn}
+                            onPress={() => updateQuantity(itemId, item.quantity + 1)}
+                          >
+                            <Ionicons name="add" size={14} color="#111111" />
+                          </TouchableOpacity>
+                        </View>
                       </View>
                     </View>
                   </View>
-                </View>
-              ))}
+                );
+              })}
 
               {/* Apply Coupon Row matching Screen 8 */}
               <TouchableOpacity
-                style={styles.couponRow}
+                style={[styles.couponRow, couponApplied && styles.couponRowActive]}
                 onPress={() => setCouponApplied(!couponApplied)}
                 activeOpacity={0.8}
               >
                 <View style={styles.couponLeft}>
-                  <Ionicons name="pricetag-outline" size={18} color="#111111" />
-                  <Text style={styles.couponText}>
-                    {couponApplied ? 'Coupon Applied: HUBKLUB10' : 'Apply Coupon'}
+                  <Ionicons
+                    name={couponApplied ? "checkmark-circle" : "pricetag-outline"}
+                    size={18}
+                    color={couponApplied ? "#10B981" : "#111111"}
+                  />
+                  <Text style={[styles.couponText, couponApplied && { color: "#10B981", fontWeight: '700' }]}>
+                    {couponApplied ? 'Coupon Applied: HUBKLUB10 (10% Off)' : 'Apply Coupon (HUBKLUB10)'}
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color="#C7C7CC" />
+                <Ionicons
+                  name={couponApplied ? "close" : "chevron-forward"}
+                  size={18}
+                  color={couponApplied ? "#10B981" : "#C7C7CC"}
+                />
               </TouchableOpacity>
+
+              {/* HUBKLUB Points Redemption Card */}
+              {pointsBalance > 0 && (
+                <TouchableOpacity
+                  style={[styles.loyaltyCard, redeemedPoints > 0 && styles.loyaltyCardActive]}
+                  onPress={handleTogglePoints}
+                  activeOpacity={0.85}
+                >
+                  <View style={styles.loyaltyLeft}>
+                    <View style={styles.loyaltyIconBox}>
+                      <Ionicons name="sparkles" size={16} color="#D4AF37" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.loyaltyTitle}>Redeem HUBKLUB Points</Text>
+                      <Text style={styles.loyaltySub}>
+                        {redeemedPoints > 0
+                          ? `Using ${redeemedPoints} pts for ₹${redeemedPoints} instant discount`
+                          : `You have ${pointsBalance.toLocaleString('en-IN')} pts (Worth ₹${pointsBalance.toLocaleString('en-IN')})`}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={[styles.loyaltyActionBadge, redeemedPoints > 0 && styles.loyaltyActionBadgeActive]}>
+                    <Text style={[styles.loyaltyActionText, redeemedPoints > 0 && styles.loyaltyActionTextActive]}>
+                      {redeemedPoints > 0 ? 'Applied ✓' : 'Redeem'}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )}
 
               {/* Order Summary Card */}
               <View style={styles.summaryCard}>
@@ -153,6 +210,22 @@ export const CartModal: React.FC<CartModalProps> = ({
                     {formattedShipping}
                   </Text>
                 </View>
+
+                {couponDiscount > 0 && (
+                  <View style={styles.summaryRow}>
+                    <Text style={[styles.summaryLabel, { color: '#059669' }]}>Coupon HUBKLUB10 (10% Off)</Text>
+                    <Text style={[styles.summaryValue, { color: '#059669' }]}>{formattedCoupon}</Text>
+                  </View>
+                )}
+
+                {loyaltyDiscount > 0 && (
+                  <View style={styles.summaryRow}>
+                    <Text style={[styles.summaryLabel, { color: '#D4AF37' }]}>
+                      HUBKLUB Points ({redeemedPoints} pts)
+                    </Text>
+                    <Text style={[styles.summaryValue, { color: '#D4AF37' }]}>{formattedLoyalty}</Text>
+                  </View>
+                )}
 
                 <View style={[styles.summaryRow, styles.totalRow]}>
                   <Text style={styles.totalLabel}>Total</Text>
@@ -392,5 +465,70 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     letterSpacing: 0.5,
+  },
+  couponRowActive: {
+    borderColor: '#10B981',
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  loyaltyCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: '#FAF5EE',
+    borderWidth: 1,
+    borderColor: '#E5D5C0',
+    marginTop: 10,
+  },
+  loyaltyCardActive: {
+    backgroundColor: '#FDFBF7',
+    borderColor: '#D4AF37',
+  },
+  loyaltyLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+    paddingRight: 8,
+  },
+  loyaltyIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5D5C0',
+  },
+  loyaltyTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#111111',
+  },
+  loyaltySub: {
+    fontSize: 11,
+    color: '#785A28',
+    marginTop: 1,
+  },
+  loyaltyActionBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    backgroundColor: '#111111',
+  },
+  loyaltyActionBadgeActive: {
+    backgroundColor: '#D4AF37',
+  },
+  loyaltyActionText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  loyaltyActionTextActive: {
+    color: '#111111',
   },
 });

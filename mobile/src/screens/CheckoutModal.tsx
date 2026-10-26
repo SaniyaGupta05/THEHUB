@@ -27,7 +27,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   onClose,
   onOrderSuccess,
 }) => {
-  const { items, subtotal, shippingFee, clearCart } = useCart();
+  const { items, subtotal, shippingFee, clearCart, loyaltyDiscount, redeemedPoints } = useCart();
   const { customerProfile, refreshProfile } = useAuth();
 
   const defaultName = customerProfile
@@ -47,9 +47,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
 
+  const totalAmount = Math.max(0, subtotal + shippingFee - loyaltyDiscount);
   const formattedSubtotal = `₹ ${new Intl.NumberFormat('en-IN').format(subtotal)}`;
   const formattedShipping = shippingFee === 0 ? '₹ 0' : `₹ ${shippingFee}`;
-  const totalAmount = subtotal + shippingFee;
+  const formattedLoyalty = `- ₹ ${new Intl.NumberFormat('en-IN').format(loyaltyDiscount)}`;
   const formattedTotal = `₹ ${new Intl.NumberFormat('en-IN').format(totalAmount)}`;
 
   const handlePlaceOrder = async () => {
@@ -67,7 +68,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           country: 'India',
         },
         items,
-        points_to_redeem: 0,
+        points_to_redeem: redeemedPoints,
         idempotency_key: `chk_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       });
 
@@ -93,8 +94,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         subtotal,
         tax: 0,
         shipping: shippingFee,
-        discount_amount: 0,
-        points_redeemed: 0,
+        discount_amount: loyaltyDiscount,
+        points_redeemed: redeemedPoints,
         points_earned_estimated: Math.round(totalAmount * 0.05),
         total_amount: totalAmount,
         status: 'Delivered',
@@ -310,6 +311,15 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 {formattedShipping}
               </Text>
             </View>
+
+            {loyaltyDiscount > 0 && (
+              <View style={styles.summaryRow}>
+                <Text style={[styles.summaryLabel, { color: '#D4AF37' }]}>
+                  HUBKLUB Points ({redeemedPoints} pts)
+                </Text>
+                <Text style={[styles.summaryValue, { color: '#D4AF37' }]}>{formattedLoyalty}</Text>
+              </View>
+            )}
 
             <View style={[styles.summaryRow, styles.totalRow]}>
               <Text style={styles.totalLabel}>Total</Text>

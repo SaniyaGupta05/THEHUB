@@ -85,7 +85,9 @@ function MainAppContent() {
 
         {activeTab === 'hubklub' && <HubklubScreen />}
 
-        {activeTab === 'account' && <AccountScreen />}
+        {activeTab === 'account' && (
+          <AccountScreen onNavigateTab={(tab) => setActiveTab(tab)} />
+        )}
       </View>
 
       {/* Bottom Navigation Bar matching prototype diagram */}

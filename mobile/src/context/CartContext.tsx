@@ -61,14 +61,20 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [items]);
 
   const addItem = (product: Product, variant: ProductVariant, quantity: number = 1) => {
-    if (!variant.available) {
-      alert(`Sorry, variant ${variant.title} is currently out of stock.`);
+    const isAvail = variant ? variant.available : product.available;
+    if (!isAvail) {
+      alert(`Sorry, this piece is currently out of stock.`);
       return;
     }
 
+    const varId = variant?.id || 'standard';
+    const varPrice = variant?.price ?? product.price ?? 0;
+    const varTitle = variant?.title || 'Standard';
+    const img = (product.images && product.images[0]) || (product as any).image || 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=600&q=80';
+
     setItems((prev) => {
       const existing = prev.find(
-        (i) => i.product_id === product.id && i.variant_id === variant.id
+        (i) => i.product_id === product.id && i.variant_id === varId
       );
       if (existing) {
         return prev.map((i) =>
@@ -84,15 +90,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const newItem: CartItem = {
           id: `ci_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
           product_id: product.id,
-          variant_id: variant.id,
+          variant_id: varId,
           product_title: product.title,
-          variant_title: variant.title,
-          price: variant.price,
+          variant_title: varTitle,
+          price: varPrice,
           quantity,
-          total_price: variant.price * quantity,
-          image: product.images[0],
-          size: variant.size,
-          color: variant.color,
+          total_price: varPrice * quantity,
+          image: img,
+          size: variant?.size || 'Free Size',
+          color: variant?.color || 'Standard',
         };
         return [...prev, newItem];
       }
@@ -106,7 +112,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     setItems((prev) =>
       prev.map((i) =>
-        i.id === itemId
+        i.id === itemId || i.variant_id === itemId
           ? { ...i, quantity, total_price: quantity * i.price }
           : i
       )
@@ -114,7 +120,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const removeItem = (itemId: string) => {
-    setItems((prev) => prev.filter((i) => i.id !== itemId));
+    setItems((prev) => prev.filter((i) => i.id !== itemId && i.variant_id !== itemId));
   };
 
   const applyLoyaltyDiscount = (points: number) => {
