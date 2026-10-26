@@ -23,10 +23,12 @@ type HubklubView =
   | 'expiry'; // Screen 18
 
 export const HubklubScreen: React.FC = () => {
-  const { activeCustomerId, refreshProfile, openAuthModal } = useAuth();
+  const { activeCustomerId, customerProfile, pointsBalance, isLoggedIn, refreshProfile, openAuthModal } = useAuth();
   const [activeView, setActiveView] = useState<HubklubView>('dashboard');
   const [summary, setSummary] = useState<HubklubSummary | null>(null);
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isEnrolling, setIsEnrolling] = useState(false);
 
   // Screen 16: Redeem selection
   const [selectedRedeemAmount, setSelectedRedeemAmount] = useState<number>(1000);
@@ -38,8 +40,12 @@ export const HubklubScreen: React.FC = () => {
   const fetchLoyaltyData = async () => {
     setIsLoading(true);
     try {
-      const data = await apiClient.getLoyaltySummary();
+      const [data, txList] = await Promise.all([
+        apiClient.getLoyaltySummary().catch(() => null),
+        apiClient.getLoyaltyTransactions().catch(() => []),
+      ]);
       setSummary(data);
+      setTransactions(Array.isArray(txList) ? txList : []);
     } catch (e) {
       console.warn('Failed to load loyalty data', e);
     } finally {
@@ -50,6 +56,23 @@ export const HubklubScreen: React.FC = () => {
   useEffect(() => {
     fetchLoyaltyData();
   }, [activeCustomerId]);
+
+  const handleEnroll = async () => {
+    setIsEnrolling(true);
+    try {
+      await apiClient.enrollLoyaltyDemo();
+      Alert.alert(
+        'Welcome to HUBKLUB!',
+        'You have successfully enrolled in HUBKLUB Membership. Enjoy earning reward points on all your purchases!'
+      );
+      await refreshProfile();
+      await fetchLoyaltyData();
+    } catch (err: any) {
+      Alert.alert('Enrollment Error', err.message || 'Unable to complete enrollment.');
+    } finally {
+      setIsEnrolling(false);
+    }
+  };
 
   const handleRedeemPoints = async () => {
     setIsRedeeming(true);
@@ -72,14 +95,22 @@ export const HubklubScreen: React.FC = () => {
     }
   };
 
-  const availablePoints = summary?.balance?.available_points ?? 2500;
-  const annualSpend = summary?.annual_bonus?.accumulated_spend_inr ?? 62000;
+  const availablePoints = typeof pointsBalance === 'number' ? pointsBalance : (summary?.balance?.available_points ?? 0);
+  const annualSpend = customerProfile?.annual_spend_current_year ?? summary?.annual_bonus?.accumulated_spend_inr ?? 0;
   const annualThreshold = 100000;
   const progressPercent = Math.min(100, Math.round((annualSpend / annualThreshold) * 100));
-  const pointsEarnedYear = summary?.annual_bonus?.points_earned_this_year ?? 3100;
+  const pointsEarnedYear = summary?.annual_bonus?.points_earned_this_year ?? Math.round(annualSpend * 0.05);
 
   // SCREEN 14: MEMBERSHIP ELIGIBILITY
   if (activeView === 'eligibility') {
+    const isEnrolledMember = Boolean(customerProfile?.is_hubklub_member || summary?.membership?.is_member);
+    const maxSingle = customerProfile?.max_single_purchase ?? summary?.membership?.max_single_purchase ?? 0;
+    const threshold = summary?.membership?.eligibility_threshold ?? 1000;
+    const isEligibleToEnroll = isEnrolledMember || maxSingle >= threshold || Boolean(summary?.membership?.is_eligible);
+    const eligibilityProgress = isEnrolledMember ? 100 : Math.min(100, Math.round((maxSingle / threshold) * 100));
+    const memberTier = customerProfile?.tier || summary?.membership?.tier || 'Classic';
+    const memberNum = customerProfile?.membership_number || summary?.membership?.membership_number || 'Active Member';
+
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.topHeader}>
@@ -93,38 +124,90 @@ export const HubklubScreen: React.FC = () => {
         <ScrollView contentContainerStyle={styles.screenPadding} showsVerticalScrollIndicator={false}>
           <Text style={styles.screenTitle}>Membership Eligibility</Text>
           <Text style={styles.screenSubtitle}>
-            Make a one-time purchase of ₹1,000 or more to enroll in HUBKLUB membership.
+            {isEnrolledMember
+              ? 'Your HUBKLUB membership is active and verified across all store counters & online.'
+              : 'Make a one-time purchase of ₹1,000 or more to enroll in HUBKLUB membership.'}
           </Text>
 
           <View style={styles.eligibilityCard}>
             <View style={styles.eligibilityRow}>
-              <Text style={styles.eligibilitySpent}>₹ 650 <Text style={styles.eligibilityTarget}>/ 1,000</Text></Text>
-              <Text style={styles.eligibilityPercent}>65%</Text>
+              {isEnrolledMember ? (
+                <View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Ionicons name="shield-checkmark" size={18} color="#D4AF37" />
+                    <Text style={{ fontSize: 16, fontWeight: '700', color: '#111111' }}>
+                      Active {memberTier} Member
+                    </Text>
+                  </View>
+                  <Text style={{ fontSize: 12, color: '#777777', marginTop: 2 }}>
+                    ID: {memberNum}
+                  </Text>
+                </View>
+              ) : (
+                <Text style={styles.eligibilitySpent}>
+                  ₹ {maxSingle.toLocaleString('en-IN')}{' '}
+                  <Text style={styles.eligibilityTarget}>/ {threshold.toLocaleString('en-IN')}</Text>
+                </Text>
+              )}
+              <Text style={styles.eligibilityPercent}>{eligibilityProgress}%</Text>
             </View>
 
             <View style={styles.progressBarTrack}>
-              <View style={[styles.progressBarFill, { width: '65%' }]} />
+              <View style={[styles.progressBarFill, { width: `${eligibilityProgress}%` }]} />
             </View>
+
+            <Text style={{ fontSize: 13, color: '#555555', marginTop: 12, lineHeight: 18 }}>
+              {isEnrolledMember
+                ? `You have qualified and enrolled in HUBKLUB. Enjoy 1 pt = ₹1 redemption value and up to 6% points back on every in-store and online purchase.`
+                : isEligibleToEnroll
+                ? `Congratulations! Your single purchase of ₹${maxSingle.toLocaleString('en-IN')} qualifies you for instant HUBKLUB membership.`
+                : `Spend ₹${(threshold - maxSingle).toLocaleString('en-IN')} more on a single purchase to unlock lifetime membership rewards.`}
+            </Text>
           </View>
 
-          <TouchableOpacity
-            style={styles.blackActionBtn}
-            onPress={() => setActiveView('dashboard')}
-            activeOpacity={0.88}
-          >
-            <Text style={styles.blackActionBtnText}>Continue Shopping</Text>
-          </TouchableOpacity>
-
-          <View style={styles.alreadyMemberBox}>
-            <Text style={styles.alreadyMemberText}>Already a member?</Text>
-            <Text style={styles.alreadyMemberSub}>Sign in to view your benefits.</Text>
+          {isEnrolledMember ? (
             <TouchableOpacity
-              style={styles.signInLinkBtn}
-              onPress={() => openAuthModal('signin')}
+              style={styles.blackActionBtn}
+              onPress={() => setActiveView('dashboard')}
+              activeOpacity={0.88}
             >
-              <Text style={styles.signInLinkText}>Sign In</Text>
+              <Text style={styles.blackActionBtnText}>View HUBKLUB Dashboard</Text>
             </TouchableOpacity>
-          </View>
+          ) : isEligibleToEnroll ? (
+            <TouchableOpacity
+              style={styles.blackActionBtn}
+              onPress={handleEnroll}
+              disabled={isEnrolling}
+              activeOpacity={0.88}
+            >
+              {isEnrolling ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.blackActionBtnText}>Enroll in HUBKLUB Now</Text>
+              )}
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={styles.blackActionBtn}
+              onPress={() => setActiveView('dashboard')}
+              activeOpacity={0.88}
+            >
+              <Text style={styles.blackActionBtnText}>Continue Shopping</Text>
+            </TouchableOpacity>
+          )}
+
+          {!isLoggedIn && (
+            <View style={styles.alreadyMemberBox}>
+              <Text style={styles.alreadyMemberText}>Already a member?</Text>
+              <Text style={styles.alreadyMemberSub}>Sign in to view your benefits.</Text>
+              <TouchableOpacity
+                style={styles.signInLinkBtn}
+                onPress={() => openAuthModal('signin')}
+              >
+                <Text style={styles.signInLinkText}>Sign In</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </ScrollView>
       </SafeAreaView>
     );
@@ -257,18 +340,11 @@ export const HubklubScreen: React.FC = () => {
 
   // SCREEN 17: POINTS HISTORY
   if (activeView === 'history') {
-    const transactions = [
-      { id: '1', title: 'Purchase Bonus', date: '16 Apr 2025', expires: '5 Apr 2027', points: 150, type: 'earn' },
-      { id: '2', title: 'Redemption', date: '10 Apr 2025', points: -500, type: 'redeem' },
-      { id: '3', title: 'Purchase Bonus', date: '05 Apr 2025', expires: '5 Apr 2027', points: 300, type: 'earn' },
-      { id: '4', title: 'Purchase Bonus', date: '28 Mar 2025', expires: '28 Mar 2027', points: 200, type: 'earn' },
-      { id: '5', title: 'Expired Points', date: '15 Mar 2025', expires: '15 Mar 2025', points: -100, type: 'expired' },
-    ];
-
     const filtered = transactions.filter((tx) => {
+      const pts = Number(tx.points) || 0;
       if (historyTab === 'All') return true;
-      if (historyTab === 'Earned') return tx.type === 'earn';
-      if (historyTab === 'Redeemed') return tx.type === 'redeem';
+      if (historyTab === 'Earned') return tx.type === 'earn' || tx.type === 'bonus' || pts > 0;
+      if (historyTab === 'Redeemed') return tx.type === 'redeem' || pts < 0;
       if (historyTab === 'Expired') return tx.type === 'expired';
       return true;
     });
@@ -299,35 +375,75 @@ export const HubklubScreen: React.FC = () => {
         </View>
 
         <ScrollView contentContainerStyle={styles.screenPadding} showsVerticalScrollIndicator={false}>
-          {filtered.map((tx) => {
-            const isPositive = tx.points > 0;
-            return (
-              <View key={tx.id} style={styles.txRow}>
-                <View style={styles.txLeft}>
-                  <View style={styles.txIconBox}>
-                    <Ionicons
-                      name={tx.type === 'earn' ? 'gift-outline' : tx.type === 'redeem' ? 'bag-check-outline' : 'alert-circle-outline'}
-                      size={18}
-                      color="#C5A880"
-                    />
-                  </View>
-                  <View>
-                    <Text style={styles.txTitle}>{tx.title}</Text>
-                    <Text style={styles.txDate}>{tx.date}</Text>
-                  </View>
-                </View>
+          {filtered.length === 0 ? (
+            <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 60 }}>
+              <Ionicons name="receipt-outline" size={48} color="#CCCCCC" />
+              <Text style={{ fontSize: 16, fontWeight: '600', color: '#111111', marginTop: 16 }}>
+                No Points Transactions Found
+              </Text>
+              <Text style={{ fontSize: 13, color: '#777777', textAlign: 'center', marginTop: 6, paddingHorizontal: 30 }}>
+                Points earned on in-store bills and online purchases will automatically appear here.
+              </Text>
+            </View>
+          ) : (
+            filtered.map((tx) => {
+              const pts = Number(tx.points) || 0;
+              const isPositive = pts > 0;
+              const title =
+                tx.description ||
+                tx.title ||
+                (tx.type === 'earn' ? 'Purchase Points Earned' : tx.type === 'redeem' ? 'Points Redeemed' : 'Bonus Points');
+              const rawDate = tx.timestamp || tx.date || '';
+              const dateParsed = new Date(rawDate);
+              const dateStr = !isNaN(dateParsed.getTime())
+                ? dateParsed.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                : rawDate.split(',')[0] || rawDate;
 
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={[styles.txPointsText, isPositive ? styles.pointsGreen : styles.pointsRed]}>
-                    {isPositive ? `+${tx.points}` : `${tx.points}`}
-                  </Text>
-                  {tx.expires && (
-                    <Text style={styles.txExpiryText}>{tx.expires}</Text>
-                  )}
+              return (
+                <View key={tx.id} style={styles.txRow}>
+                  <View style={styles.txLeft}>
+                    <View style={styles.txIconBox}>
+                      <Ionicons
+                        name={
+                          tx.type === 'earn' || tx.type === 'bonus' || pts > 0
+                            ? 'gift-outline'
+                            : tx.type === 'redeem'
+                            ? 'bag-check-outline'
+                            : 'alert-circle-outline'
+                        }
+                        size={18}
+                        color="#C5A880"
+                      />
+                    </View>
+                    <View style={{ flex: 1, marginRight: 8 }}>
+                      <Text style={styles.txTitle} numberOfLines={2}>
+                        {title}
+                      </Text>
+                      <Text style={styles.txDate}>{dateStr}</Text>
+                    </View>
+                  </View>
+
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Text style={[styles.txPointsText, isPositive ? styles.pointsGreen : styles.pointsRed]}>
+                      {isPositive ? `+${pts}` : `${pts}`}
+                    </Text>
+                    {tx.expiry_date && (
+                      <Text style={styles.txExpiryText}>
+                        Exp:{' '}
+                        {!isNaN(new Date(tx.expiry_date).getTime())
+                          ? new Date(tx.expiry_date).toLocaleDateString('en-GB', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })
+                          : tx.expiry_date}
+                      </Text>
+                    )}
+                  </View>
                 </View>
-              </View>
-            );
-          })}
+              );
+            })
+          )}
         </ScrollView>
       </SafeAreaView>
     );
@@ -335,6 +451,28 @@ export const HubklubScreen: React.FC = () => {
 
   // SCREEN 18: POINTS EXPIRY
   if (activeView === 'expiry') {
+    const rawBatches = summary?.balance?.points_batches;
+    const hasBatches = rawBatches && rawBatches.length > 0;
+    const displayBatches = hasBatches
+      ? rawBatches.map((b) => ({
+          pts: `${b.points}`,
+          earned: '2026',
+          expires: !isNaN(new Date(b.expiry_date).getTime())
+            ? new Date(b.expiry_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+            : `${b.days_remaining} days`,
+          urgent: b.days_remaining <= 30,
+        }))
+      : availablePoints > 0
+      ? [
+          {
+            pts: `${availablePoints}`,
+            earned: 'Current Active',
+            expires: '24 Months Validity',
+            urgent: false,
+          },
+        ]
+      : [];
+
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.topHeader}>
@@ -350,8 +488,14 @@ export const HubklubScreen: React.FC = () => {
           <View style={styles.expiryAlertCard}>
             <Ionicons name="time-outline" size={24} color="#C5A880" style={{ marginRight: 12 }} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.expiryAlertTitle}>Points Expiring Soon</Text>
-              <Text style={styles.expiryAlertDesc}>500 points will expire on 15 May 2025</Text>
+              <Text style={styles.expiryAlertTitle}>
+                {availablePoints > 0 ? 'Points Validity Tracking' : 'No Expiring Points'}
+              </Text>
+              <Text style={styles.expiryAlertDesc}>
+                {availablePoints > 0
+                  ? `${availablePoints.toLocaleString('en-IN')} points are valid across 24 months from earning.`
+                  : 'Your points balance is currently 0.'}
+              </Text>
             </View>
           </View>
 
@@ -365,23 +509,31 @@ export const HubklubScreen: React.FC = () => {
               <Text style={styles.expiryThRight}>Expires On</Text>
             </View>
 
-            {[
-              { pts: '500', earned: '15 Mar 2025', expires: '15 May 2025', urgent: true },
-              { pts: '300', earned: '05 Feb 2025', expires: '05 Apr 2027', urgent: false },
-              { pts: '200', earned: '10 Jan 2025', expires: '10 Jan 2027', urgent: false },
-              { pts: '100', earned: '20 Dec 2024', expires: '20 Dec 2026', urgent: false },
-            ].map((row, idx) => (
-              <View key={idx} style={styles.expiryTableRow}>
-                <Text style={[styles.expiryTd, row.urgent && styles.urgentText]}>{row.pts}</Text>
-                <Text style={styles.expiryTd}>{row.earned}</Text>
-                <Text style={[styles.expiryTdRight, row.urgent && styles.urgentText]}>{row.expires}</Text>
+            {displayBatches.length === 0 ? (
+              <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                <Text style={{ color: '#888888', fontSize: 13 }}>No expiring points on record.</Text>
               </View>
-            ))}
+            ) : (
+              displayBatches.map((row, idx) => (
+                <View key={idx} style={styles.expiryTableRow}>
+                  <Text style={[styles.expiryTd, row.urgent && styles.urgentText]}>{row.pts}</Text>
+                  <Text style={styles.expiryTd}>{row.earned}</Text>
+                  <Text style={[styles.expiryTdRight, row.urgent && styles.urgentText]}>{row.expires}</Text>
+                </View>
+              ))
+            )}
           </View>
         </ScrollView>
       </SafeAreaView>
     );
   }
+
+  const userTier = customerProfile?.tier || summary?.membership?.tier || (annualSpend >= 100000 ? 'Gold' : 'Classic');
+  const memberSinceDate = customerProfile?.member_since ? new Date(customerProfile.member_since) : null;
+  const memberSinceStr =
+    memberSinceDate && !isNaN(memberSinceDate.getTime())
+      ? `Member since ${memberSinceDate.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}`
+      : 'Active HUBKLUB Member';
 
   // SCREEN 13: MAIN HUBKLUB DASHBOARD
   return (
@@ -408,14 +560,14 @@ export const HubklubScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Gold Member Card matching Screen 13 */}
+        {/* Dynamic Member Card matching Screen 13 */}
         <View style={styles.goldMemberCard}>
           <View style={styles.cardHeaderRow}>
             <View style={styles.tierShieldRow}>
               <Ionicons name="shield-checkmark" size={18} color="#C5A880" />
               <View style={{ marginLeft: 8 }}>
-                <Text style={styles.tierName}>Gold Member</Text>
-                <Text style={styles.tierMemberSince}>Member since Apr 2025</Text>
+                <Text style={styles.tierName}>{userTier} Member</Text>
+                <Text style={styles.tierMemberSince}>{memberSinceStr}</Text>
               </View>
             </View>
           </View>

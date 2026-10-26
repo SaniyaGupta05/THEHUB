@@ -128,6 +128,82 @@ class ApiClient {
     return this.customerId;
   }
 
+  setCustomProfile(profile: CustomerProfile) {
+    if (profile && profile.id) {
+      this.customProfiles.set(profile.id, profile);
+    }
+  }
+
+  private isInvoiceMatch(inv: any, currentProfile?: CustomerProfile): boolean {
+    if (!inv) return false;
+    const myPhone = (currentProfile?.phone || '').replace(/\D/g, '');
+    const myName = `${currentProfile?.first_name || ''} ${currentProfile?.last_name || ''}`.trim().toLowerCase();
+    const myCid = (this.customerId || '').trim().toLowerCase();
+
+    const invPhone = (inv.customer_phone || '').replace(/\D/g, '');
+    const invName = (inv.customer_name || '').trim().toLowerCase();
+    const invCid = (inv.customer_id || '').trim().toLowerCase();
+
+    // 1. Phone match (last 10 digits)
+    if (myPhone.length >= 10 && invPhone.length >= 10 && myPhone.slice(-10) === invPhone.slice(-10)) {
+      return true;
+    }
+    // 2. Exact or substring name match (min 3 chars)
+    if (myName.length >= 3 && invName.length >= 3 && (myName === invName || myName.includes(invName) || invName.includes(myName))) {
+      return true;
+    }
+    // 3. Customer ID match
+    if (myCid && (invCid === myCid || (invPhone.length >= 10 && myCid.includes(invPhone.slice(-10))))) {
+      return true;
+    }
+    return false;
+  }
+
+  private mapInvoiceToOrder(inv: any): Order {
+    const gross = Number(inv.gross_amount) || 0;
+    const discount = Number(inv.loyalty_discount_inr) || 0;
+    const pointsRedeemed = Number(inv.points_redeemed) || 0;
+    const pointsEarned = Number(inv.points_earned_this_bill) || 0;
+    const net = Number(inv.net_payable) || Math.max(0, gross - discount);
+
+    return {
+      id: inv.invoice_number,
+      order_number: inv.invoice_number,
+      customer_id: this.customerId,
+      items: [
+        {
+          product_id: 'store_pos_purchase',
+          variant_id: 'store_pos_var',
+          product_title: 'In-Store Retail Purchase (THE HUB Vadodara)',
+          quantity: 1,
+          unit_price: gross,
+          total_price: gross,
+        },
+      ],
+      subtotal: gross,
+      tax: 0,
+      shipping: 0,
+      discount_amount: discount,
+      points_redeemed: pointsRedeemed,
+      points_earned_estimated: pointsEarned,
+      total_amount: net,
+      status: 'Delivered',
+      payment_method: inv.payment_method || 'Store POS',
+      shipping_address: {
+        full_name: inv.customer_name || 'In-Store Customer',
+        phone: inv.customer_phone || '',
+        street: 'THE HUB • In-Store POS (RC Dutt Road)',
+        city: 'Vadodara',
+        state: 'Gujarat',
+        pincode: '390007',
+        country: 'India',
+      },
+      channel: 'in_store_pos',
+      created_at: inv.timestamp || new Date().toISOString(),
+      is_demo: false,
+    };
+  }
+
   recordOrder(order: Order) {
     const cid = order.customer_id || this.customerId;
     const list = this.customOrders.get(cid) || [];
@@ -360,12 +436,116 @@ class ApiClient {
   }
 
   async getOrders(): Promise<Order[]> {
-    return this.request<Order[]>('/orders');
+    const ordersMap = new Map<string, Order>();
+    const currentProfile = this.getLocalProfile(this.customerId);
+
+    // 1. Locally recorded custom orders
+    const local = this.customOrders.get(this.customerId) || [];
+    local.forEach((o) => {
+      if (o && (o.order_number || o.id)) {
+        ordersMap.set(o.order_number || o.id, o);
+      }
+    });
+
+    // 2. Fetch from live backend /orders
+    try {
+      const serverOrders = await this.request<Order[]>('/orders');
+      if (Array.isArray(serverOrders)) {
+        serverOrders.forEach((o) => {
+          if (o && (o.order_number || o.id)) {
+            ordersMap.set(o.order_number || o.id, o);
+          }
+        });
+      }
+    } catch (e) {
+      console.log('[getOrders] /orders fetch skipped:', e);
+    }
+
+    // 3. Fetch from /staff/billing/invoices (counter in-store bills)
+    try {
+      const invoices = await this.request<any[]>('/staff/billing/invoices');
+      if (Array.isArray(invoices)) {
+        invoices.forEach((inv) => {
+          if (this.isInvoiceMatch(inv, currentProfile)) {
+            const billOrder = this.mapInvoiceToOrder(inv);
+            ordersMap.set(billOrder.order_number, billOrder);
+          }
+        });
+      }
+    } catch (e) {
+      console.log('[getOrders] /staff/billing/invoices fetch skipped:', e);
+    }
+
+    const merged = Array.from(ordersMap.values());
+    merged.sort((a, b) => {
+      const timeA = new Date(a.created_at || 0).getTime();
+      const timeB = new Date(b.created_at || 0).getTime();
+      return timeB - timeA;
+    });
+
+    return merged;
   }
 
   // HUBKLUB Loyalty
   async getLoyaltySummary(): Promise<HubklubSummary> {
-    return this.request<HubklubSummary>('/loyalty/summary');
+    const summary = await this.request<HubklubSummary>('/loyalty/summary');
+    const currentProfile = this.getLocalProfile(this.customerId);
+
+    // Reconcile with in-store billing receipts
+    try {
+      const invoices = await this.request<any[]>('/staff/billing/invoices');
+      if (Array.isArray(invoices)) {
+        const matchingInvoices = invoices.filter((inv) => this.isInvoiceMatch(inv, currentProfile));
+        if (matchingInvoices.length > 0) {
+          const maxBill = Math.max(...matchingInvoices.map((inv) => Number(inv.gross_amount) || 0));
+          const totalSpend = matchingInvoices.reduce(
+            (acc, inv) => acc + (Number(inv.net_payable) || Number(inv.gross_amount) || 0),
+            0
+          );
+          const totalBillPoints = matchingInvoices.reduce(
+            (acc, inv) => acc + (Number(inv.points_earned_this_bill) || 0),
+            0
+          );
+
+          if (summary?.membership) {
+            summary.membership.max_single_purchase = Math.max(
+              summary.membership.max_single_purchase || 0,
+              maxBill
+            );
+            if (summary.membership.max_single_purchase >= 1000) {
+              summary.membership.is_eligible = true;
+              summary.membership.is_member = true;
+              summary.membership.progress_percent = 100;
+              summary.membership.tier = summary.membership.tier || 'Classic';
+              summary.membership.membership_number =
+                summary.membership.membership_number || `HK-POS-${this.customerId.slice(-6).toUpperCase()}`;
+              summary.membership.eligibility_message = `Active HUBKLUB ${summary.membership.tier} Member. In-store purchases qualify for reward points.`;
+            }
+          }
+          if (summary?.balance) {
+            summary.balance.available_points = Math.max(
+              summary.balance.available_points || 0,
+              totalBillPoints
+            );
+            summary.balance.redemption_value_inr = summary.balance.available_points;
+          }
+          if (summary?.annual_bonus) {
+            summary.annual_bonus.accumulated_spend_inr = Math.max(
+              summary.annual_bonus.accumulated_spend_inr || 0,
+              totalSpend
+            );
+            summary.annual_bonus.points_earned_this_year = Math.max(
+              summary.annual_bonus.points_earned_this_year || 0,
+              totalBillPoints
+            );
+          }
+        }
+      }
+    } catch (e) {
+      // Reconcile failed, keep base summary
+    }
+
+    return summary;
   }
 
   async getLoyaltyMembership(): Promise<HubklubMembershipStatus> {
@@ -384,7 +564,81 @@ class ApiClient {
   }
 
   async getLoyaltyTransactions(): Promise<PointsTransaction[]> {
-    return this.request<PointsTransaction[]>('/loyalty/transactions');
+    const txMap = new Map<string, PointsTransaction>();
+    const currentProfile = this.getLocalProfile(this.customerId);
+
+    // 1. Fetch from live backend /loyalty/transactions
+    try {
+      const serverTxs = await this.request<PointsTransaction[]>('/loyalty/transactions');
+      if (Array.isArray(serverTxs)) {
+        serverTxs.forEach((tx) => {
+          if (tx && tx.id) txMap.set(tx.id, tx);
+        });
+      }
+    } catch (e) {
+      console.log('[getLoyaltyTransactions] /loyalty/transactions fetch skipped:', e);
+    }
+
+    // 2. Fetch in-store invoices to add points earned & redeemed
+    try {
+      const invoices = await this.request<any[]>('/staff/billing/invoices');
+      if (Array.isArray(invoices)) {
+        invoices.forEach((inv) => {
+          if (this.isInvoiceMatch(inv, currentProfile)) {
+            const earned = Number(inv.points_earned_this_bill) || 0;
+            const redeemed = Number(inv.points_redeemed) || 0;
+
+            if (earned > 0) {
+              const txId = `tx_pos_earn_${inv.invoice_number}`;
+              txMap.set(txId, {
+                id: txId,
+                customer_id: this.customerId,
+                type: 'earn',
+                points: earned,
+                rupee_equivalent: earned,
+                description: `Earned on In-Store Bill #${inv.invoice_number} (₹${(Number(inv.gross_amount) || 0).toLocaleString('en-IN')})`,
+                timestamp: inv.timestamp || new Date().toISOString(),
+                status: 'Active',
+              });
+            }
+            if (redeemed > 0) {
+              const txId = `tx_pos_red_${inv.invoice_number}`;
+              txMap.set(txId, {
+                id: txId,
+                customer_id: this.customerId,
+                type: 'redeem',
+                points: -redeemed,
+                rupee_equivalent: redeemed,
+                description: `Redeemed on In-Store Bill #${inv.invoice_number} (₹${(Number(inv.loyalty_discount_inr) || 0).toLocaleString('en-IN')} discount)`,
+                timestamp: inv.timestamp || new Date().toISOString(),
+                status: 'Confirmed',
+              });
+            }
+          }
+        });
+      }
+    } catch (e) {
+      console.log('[getLoyaltyTransactions] invoices fetch skipped:', e);
+    }
+
+    // 3. If customer has points balance and no transactions yet, add Welcome Bonus
+    const currentPts = this.getPointsBalance(this.customerId);
+    if (txMap.size === 0 && currentPts > 0) {
+      txMap.set('tx_welcome_bonus', {
+        id: 'tx_welcome_bonus',
+        customer_id: this.customerId,
+        type: 'bonus',
+        points: currentPts,
+        rupee_equivalent: currentPts,
+        description: 'HUBKLUB Welcome Bonus Points Credited',
+        timestamp: new Date().toISOString(),
+        status: 'Active',
+      });
+    }
+
+    const list = Array.from(txMap.values());
+    list.sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime());
+    return list;
   }
 
   async redeemPointsDemo(points: number, idempotencyKey: string): Promise<any> {

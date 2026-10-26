@@ -61,49 +61,15 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ onNavigateTab }) =
   const [prefPromos, setPrefPromos] = useState(true);
   const [prefWhatsapp, setPrefWhatsapp] = useState(false);
 
-  // Notifications State
-  const [notifications, setNotifications] = useState([
-    {
-      id: 'notif_1',
-      title: 'HUBKLUB Points Credited',
-      message: 'Earned 4,080 points on Royal Ivory Tapestry Sherwani Set (₹68,000).',
-      time: '2 hours ago',
-      type: 'points' as const,
-      read: false,
-    },
-    {
-      id: 'notif_2',
-      title: '20% Annual Bonus Unlocked',
-      message: 'Congratulations! You surpassed ₹1,00,000 annual spend and unlocked Gold 20% bonus points.',
-      time: '1 day ago',
-      type: 'bonus' as const,
-      read: false,
-    },
-    {
-      id: 'notif_3',
-      title: 'Order Dispatched',
-      message: 'Your order #HK-2024-88412 is on the way. Estimated delivery in 2 days.',
-      time: '2 days ago',
-      type: 'order' as const,
-      read: false,
-    },
-    {
-      id: 'notif_4',
-      title: 'Points Expiry Notice',
-      message: '450 points expire on 25 Oct. Redeem them on your next in-store or online purchase.',
-      time: '3 days ago',
-      type: 'alert' as const,
-      read: true,
-    },
-    {
-      id: 'notif_5',
-      title: 'VIP Private Autumn Preview',
-      message: 'Gold Members receive 24-hr exclusive early access to our Autumn Haute Couture drop.',
-      time: '5 days ago',
-      type: 'promo' as const,
-      read: true,
-    },
-  ]);
+  // Dynamic Notifications State based on actual user activity
+  const [notifications, setNotifications] = useState<Array<{
+    id: string;
+    title: string;
+    message: string;
+    time: string;
+    type: 'points' | 'bonus' | 'order' | 'alert' | 'promo';
+    read: boolean;
+  }>>([]);
   const [notifFilter, setNotifFilter] = useState<'all' | 'unread'>('all');
 
   useEffect(() => {
@@ -156,6 +122,114 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ onNavigateTab }) =
   useEffect(() => {
     fetchOrders();
   }, [activeCustomerId, isLoggedIn, isGuest, activeSubView]);
+
+  // Dynamically compute notification alerts from actual customer activity
+  useEffect(() => {
+    if (isGuest) {
+      setNotifications([
+        {
+          id: 'notif_guest_welcome',
+          title: 'Welcome to THE HUB',
+          message: 'Sign in to access exclusive HUBKLUB loyalty rewards, in-store billing receipts, and curated drops.',
+          time: 'Now',
+          type: 'promo' as const,
+          read: false,
+        },
+        {
+          id: 'notif_guest_eligibility',
+          title: 'HUBKLUB Membership Offer',
+          message: 'Spend ₹1,00,000 or more annually or ₹1,000 in a single purchase to unlock lifetime reward points.',
+          time: 'Today',
+          type: 'bonus' as const,
+          read: false,
+        },
+      ]);
+      return;
+    }
+
+    const dynamicNotifs: Array<{
+      id: string;
+      title: string;
+      message: string;
+      time: string;
+      type: 'points' | 'bonus' | 'order' | 'alert' | 'promo';
+      read: boolean;
+    }> = [];
+
+    // 1. In-store bills and online orders
+    const safeOrds = Array.isArray(orders) ? orders : [];
+    safeOrds.forEach((ord, idx) => {
+      const isStoreBill = ord.order_number?.startsWith('HUB-POS') || ord.id?.startsWith('inv_');
+      const earned = ord.points_earned_estimated || 0;
+      const formattedTotal = `₹${(ord.total_amount || 0).toLocaleString('en-IN')}`;
+      const timeStr = ord.created_at ? ord.created_at.split(',')[0] : 'Recent';
+
+      if (isStoreBill) {
+        dynamicNotifs.push({
+          id: `notif_bill_${ord.order_number || idx}`,
+          title: `In-Store Bill #${ord.order_number}`,
+          message: `Purchase of ${formattedTotal} completed at THE HUB Vadodara.${
+            earned > 0 ? ` +${earned} HUBKLUB Points credited to your account.` : ''
+          }`,
+          time: timeStr,
+          type: 'order',
+          read: false,
+        });
+      } else {
+        dynamicNotifs.push({
+          id: `notif_order_${ord.order_number || idx}`,
+          title: `Order #${ord.order_number} (${ord.status || 'Confirmed'})`,
+          message: `Total ${formattedTotal} • ${ord.items?.length || 1} item(s). Thank you for shopping with THE HUB.`,
+          time: timeStr,
+          type: 'order',
+          read: false,
+        });
+      }
+    });
+
+    // 2. Loyalty Membership status
+    if (customerProfile?.is_hubklub_member) {
+      dynamicNotifs.push({
+        id: 'notif_member_status',
+        title: `HUBKLUB ${customerProfile.tier || 'Classic'} Member`,
+        message: `Membership #${
+          customerProfile.membership_number || 'Active'
+        } is active. Earn 3% to 6% back on all purchases with 1 pt = ₹1 redemption value.`,
+        time: 'Active',
+        type: 'bonus',
+        read: false,
+      });
+    }
+
+    // 3. Points Balance
+    if (pointsBalance > 0) {
+      dynamicNotifs.push({
+        id: 'notif_points_balance',
+        title: 'HUBKLUB Points Balance',
+        message: `You have ${pointsBalance.toLocaleString('en-IN')} points available (₹${pointsBalance.toLocaleString(
+          'en-IN'
+        )} value) ready to redeem.`,
+        time: 'Balance',
+        type: 'points',
+        read: false,
+      });
+    }
+
+    // 4. Annual spend milestone if >= 1 Lakh
+    if ((customerProfile?.annual_spend_current_year || 0) >= 100000) {
+      dynamicNotifs.push({
+        id: 'notif_annual_milestone',
+        title: '20% Annual Bonus Milestone Achieved',
+        message:
+          'Congratulations! You surpassed ₹1,00,000 annual spend and unlocked Gold 20% bonus points on your purchases.',
+        time: 'Achieved',
+        type: 'bonus',
+        read: false,
+      });
+    }
+
+    setNotifications(dynamicNotifs);
+  }, [customerProfile, orders, pointsBalance, isGuest]);
 
   const onRefreshOrders = async () => {
     setIsRefreshingOrders(true);
@@ -265,10 +339,18 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ onNavigateTab }) =
                     </View>
                   </View>
 
-                  <Text style={styles.orderMetaText}>
-                    {new Date(ord.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}{' '}
-                    • ₹ {new Intl.NumberFormat('en-IN').format(ord.total_amount)}
-                  </Text>
+                  {(() => {
+                    const rawDate = ord.created_at || '';
+                    const d = new Date(rawDate);
+                    const dateFormatted = !isNaN(d.getTime())
+                      ? d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                      : rawDate.split(',')[0] || rawDate;
+                    return (
+                      <Text style={styles.orderMetaText}>
+                        {dateFormatted} • ₹ {new Intl.NumberFormat('en-IN').format(ord.total_amount)}
+                      </Text>
+                    );
+                  })()}
 
                   {ord.items && ord.items.length > 0 && (
                     <Text style={{ fontSize: 12, color: '#555555', marginTop: 4 }}>

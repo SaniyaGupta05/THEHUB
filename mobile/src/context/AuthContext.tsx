@@ -58,6 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ]);
       if (profile.status === 'fulfilled' && profile.value && profile.value.id) {
         setCustomerProfile(profile.value);
+        apiClient.setCustomProfile(profile.value);
       } else {
         const local = apiClient.getLocalProfile(id);
         if (local) setCustomerProfile(local);

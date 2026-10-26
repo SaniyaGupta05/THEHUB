@@ -18,7 +18,7 @@ from app.models.schemas import (
 )
 from app.config import settings
 from app.db.session import SessionLocal
-from app.db.models import DBCustomer, DBPointsTransaction, DBIdempotencyKey
+from app.db.models import DBCustomer, DBPointsTransaction, DBIdempotencyKey, DBStaffInvoice
 
 def _ensure_utc(dt: Optional[datetime]) -> Optional[datetime]:
     if dt is None:
@@ -67,7 +67,7 @@ class DBHubklubAdapter(HubklubAdapterBase):
         try:
             c = db.query(DBCustomer).filter(DBCustomer.id == customer_id).first()
             if not c:
-                return None
+                return self.find_customer(customer_id)
             return self._convert_db_customer(c)
         finally:
             db.close()
@@ -123,22 +123,67 @@ class DBHubklubAdapter(HubklubAdapterBase):
         try:
             c = db.query(DBCustomer).filter(DBCustomer.id == customer_id).first()
             if not c:
-                # Create guest customer row in DB
+                # Try finding existing customer by phone digits or email
+                q_digits = "".join(ch for ch in customer_id if ch.isdigit())
+                if q_digits and len(q_digits) >= 10:
+                    for cust in db.query(DBCustomer).all():
+                        c_digits = "".join(ch for ch in (cust.phone or "") if ch.isdigit())
+                        if len(c_digits) >= 10 and c_digits[-10:] == q_digits[-10:]:
+                            c = cust
+                            break
+            if not c:
+                # Check if there are in-store invoices for this customer
+                q_digits = "".join(ch for ch in customer_id if ch.isdigit())
+                invs = db.query(DBStaffInvoice).all()
+                matching_invs = []
+                for inv in invs:
+                    inv_digits = "".join(ch for ch in (inv.customer_phone or "") if ch.isdigit())
+                    if (q_digits and len(q_digits) >= 10 and len(inv_digits) >= 10 and q_digits[-10:] == inv_digits[-10:]) or inv.customer_id == customer_id:
+                        matching_invs.append(inv)
+
                 now = datetime.now(timezone.utc)
-                c = DBCustomer(
-                    id=customer_id,
-                    first_name="Guest",
-                    last_name="Customer",
-                    email=f"{customer_id}@hubklub.in",
-                    phone="+91 90000 00000",
-                    member_since=now,
-                    is_hubklub_member=False,
-                    tier="Classic",
-                    max_single_purchase=0.0,
-                    annual_spend_current_year=0.0,
-                    lifetime_spend=0.0,
-                    available_points=0,
-                )
+                if matching_invs:
+                    first_inv = matching_invs[0]
+                    name_parts = (first_inv.customer_name or "Store Customer").split(" ", 1)
+                    fn = name_parts[0]
+                    ln = name_parts[1] if len(name_parts) > 1 else ""
+                    max_single = max((float(i.gross_amount or 0) for i in matching_invs), default=0.0)
+                    total_spend = sum((float(i.net_payable or i.gross_amount or 0) for i in matching_invs))
+                    total_pts = sum((int(i.points_earned_this_bill or 0) for i in matching_invs))
+                    is_mem = max_single >= 1000.0
+                    tier_str = "Gold" if total_spend >= 100000.0 else "Classic"
+
+                    c = DBCustomer(
+                        id=customer_id,
+                        first_name=fn,
+                        last_name=ln,
+                        email=f"{customer_id}@hubklub.in",
+                        phone=first_inv.customer_phone or "+91 90000 00000",
+                        member_since=now,
+                        is_hubklub_member=is_mem,
+                        membership_number=f"HK-POS-{uuid.uuid4().hex[:6].upper()}" if is_mem else None,
+                        tier=tier_str,
+                        max_single_purchase=max_single,
+                        annual_spend_current_year=total_spend,
+                        lifetime_spend=total_spend,
+                        available_points=total_pts,
+                    )
+                else:
+                    # Default guest row
+                    c = DBCustomer(
+                        id=customer_id,
+                        first_name="Guest",
+                        last_name="Customer",
+                        email=f"{customer_id}@hubklub.in",
+                        phone="+91 90000 00000",
+                        member_since=now,
+                        is_hubklub_member=False,
+                        tier="Classic",
+                        max_single_purchase=0.0,
+                        annual_spend_current_year=0.0,
+                        lifetime_spend=0.0,
+                        available_points=0,
+                    )
                 db.add(c)
                 db.commit()
                 db.refresh(c)

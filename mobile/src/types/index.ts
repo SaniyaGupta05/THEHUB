@@ -100,6 +100,9 @@ export interface Order {
   shipping_address: Address;
   created_at: string;
   is_demo: boolean;
+  payment_method?: string;
+  channel?: string;
+  tally_voucher_no?: string;
 }
 
 export interface CustomerProfile {
