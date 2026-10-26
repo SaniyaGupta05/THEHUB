@@ -11,6 +11,9 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://thehub-unce.onrender.com/api/v1"
       }
     },
     "production": {}

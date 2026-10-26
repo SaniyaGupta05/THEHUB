@@ -14,6 +14,7 @@ import { HubklubScreen } from './src/screens/HubklubScreen';
 import { AccountScreen } from './src/screens/AccountScreen';
 import { CartModal } from './src/screens/CartModal';
 import { OnboardingModal } from './src/components/OnboardingModal';
+import { AuthModal } from './src/components/AuthModal';
 
 LogBox.ignoreLogs([
   'Cannot connect to Expo CLI',
@@ -201,6 +202,8 @@ function MainAppContent() {
           openAuthModal('signin');
         }}
       />
+      {/* Authentication & Create Account Global Modal */}
+      <AuthModal />
     </SafeAreaView>
   );
 }

@@ -48,6 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const fetchProfile = async (id: string) => {
+    if (!id || id === 'guest') return;
     setIsLoading(true);
     apiClient.setCustomerId(id);
     try {
@@ -57,6 +58,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ]);
       if (profile.status === 'fulfilled' && profile.value && profile.value.id) {
         setCustomerProfile(profile.value);
+      } else {
+        const local = apiClient.getLocalProfile(id);
+        if (local) setCustomerProfile(local);
       }
       if (
         balance.status === 'fulfilled' &&
@@ -69,6 +73,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (e) {
       console.log('Failed to fetch profile/balance', e);
+      const local = apiClient.getLocalProfile(id);
+      if (local) setCustomerProfile(local);
     } finally {
       setIsLoading(false);
     }
@@ -83,12 +89,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const switchCustomer = async (id: string) => {
     setIsLoggedIn(true);
     setActiveCustomerId(id);
+    apiClient.setCustomerId(id);
+    const local = apiClient.getLocalProfile(id);
+    if (local) {
+      setCustomerProfile(local);
+      setPointsBalance(apiClient.getPointsBalance(id) ?? 0);
+    }
     await fetchProfile(id);
   };
 
   const login = async (id: string) => {
     setIsLoggedIn(true);
     setActiveCustomerId(id);
+    apiClient.setCustomerId(id);
+    const local = apiClient.getLocalProfile(id);
+    if (local) {
+      setCustomerProfile(local);
+      setPointsBalance(apiClient.getPointsBalance(id) ?? 0);
+    }
     await fetchProfile(id);
   };
 
@@ -99,6 +117,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoggedIn(true);
       setActiveCustomerId(profile.id);
       setCustomerProfile(profile);
+      apiClient.setCustomerId(profile.id);
+      setPointsBalance(apiClient.getPointsBalance(profile.id) ?? 0);
       await fetchProfile(profile.id);
     } finally {
       setIsLoading(false);

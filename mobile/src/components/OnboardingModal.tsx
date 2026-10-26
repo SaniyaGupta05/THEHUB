@@ -98,7 +98,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 style={styles.signInRegisterBtn}
                 onPress={() => {
                   onClose();
-                  if (onSignInPress) onSignInPress();
+                  if (onSignInPress) {
+                    setTimeout(() => {
+                      onSignInPress();
+                    }, 350);
+                  }
                 }}
                 activeOpacity={0.8}
               >
