@@ -14,6 +14,7 @@ web-build/
 *.sqlite
 *.sqlite3
 hubklub_app.db
+~$*
 
 # Python
 __pycache__/

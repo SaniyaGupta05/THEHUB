@@ -95,7 +95,13 @@ export const HubklubScreen: React.FC = () => {
     }
   };
 
-  const availablePoints = typeof pointsBalance === 'number' ? pointsBalance : (summary?.balance?.available_points ?? 0);
+  const pointsFromTx = transactions.reduce((acc, tx) => acc + (Number(tx.points) || 0), 0);
+  const availablePoints = Math.max(
+    typeof pointsBalance === 'number' ? pointsBalance : 0,
+    summary?.balance?.available_points ?? 0,
+    pointsFromTx > 0 ? pointsFromTx : 0,
+    apiClient.getPointsBalance(activeCustomerId) ?? 0
+  );
   const annualSpend = customerProfile?.annual_spend_current_year ?? summary?.annual_bonus?.accumulated_spend_inr ?? 0;
   const annualThreshold = 100000;
   const progressPercent = Math.min(100, Math.round((annualSpend / annualThreshold) * 100));
@@ -287,11 +293,19 @@ export const HubklubScreen: React.FC = () => {
         <ScrollView contentContainerStyle={styles.screenPadding} showsVerticalScrollIndicator={false}>
           {/* Available Points Box */}
           <View style={styles.balanceInfoBox}>
-            <Text style={styles.balanceInfoLabel}>Available Points</Text>
-            <Text style={styles.balanceInfoValue}>
-              {availablePoints.toLocaleString('en-IN')}
-            </Text>
-            <Text style={styles.balanceInfoSub}>₹ {availablePoints.toLocaleString('en-IN')} value</Text>
+            <Text style={styles.balanceInfoLabel}>AVAILABLE POINTS BALANCE</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, marginVertical: 4 }}>
+              <Text style={styles.balanceInfoValue}>
+                {availablePoints.toLocaleString('en-IN')}
+              </Text>
+              <Text style={{ fontSize: 16, fontWeight: '800', color: '#D4AF37' }}>PTS</Text>
+            </View>
+            <View style={styles.rupeeValuePill}>
+              <Ionicons name="pricetag" size={13} color="#D4AF37" />
+              <Text style={styles.rupeeValueText}>
+                Worth ₹{availablePoints.toLocaleString('en-IN')} Cash Value (1 pt = ₹1)
+              </Text>
+            </View>
           </View>
 
           <Text style={styles.selectAmountTitle}>Select Redemption Amount</Text>
@@ -560,37 +574,58 @@ export const HubklubScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Dynamic Member Card matching Screen 13 */}
+        {/* Luxury HUBKLUB VIP Member & Points Card */}
         <View style={styles.goldMemberCard}>
           <View style={styles.cardHeaderRow}>
             <View style={styles.tierShieldRow}>
-              <Ionicons name="shield-checkmark" size={18} color="#C5A880" />
-              <View style={{ marginLeft: 8 }}>
+              <View style={styles.goldIconBadge}>
+                <Ionicons name="sparkles" size={16} color="#D4AF37" />
+              </View>
+              <View style={{ marginLeft: 10 }}>
                 <Text style={styles.tierName}>{userTier} Member</Text>
                 <Text style={styles.tierMemberSince}>{memberSinceStr}</Text>
               </View>
             </View>
-          </View>
-
-          <View style={styles.pointsColumnsRow}>
-            <View style={styles.pointsCol}>
-              <Text style={styles.pointsColLabel}>Available Points</Text>
-              <Text style={styles.pointsColVal}>{availablePoints.toLocaleString('en-IN')}</Text>
-            </View>
-
-            <View style={styles.pointsCol}>
-              <Text style={styles.pointsColLabel}>Redemption Value</Text>
-              <Text style={styles.pointsColVal}>₹ {availablePoints.toLocaleString('en-IN')}</Text>
+            <View style={styles.hubklubWatermarkPill}>
+              <Text style={styles.hubklubWatermarkText}>THE HUB</Text>
             </View>
           </View>
 
-          <TouchableOpacity
-            style={styles.cardRedeemBtn}
-            onPress={() => setActiveView('redeem')}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.cardRedeemText}>Redeem Points</Text>
-          </TouchableOpacity>
+          {/* Prominent High-Visibility Points Section */}
+          <View style={styles.prominentPointsContainer}>
+            <Text style={styles.prominentPointsLabel}>AVAILABLE POINTS BALANCE</Text>
+            <View style={styles.prominentPointsNumberRow}>
+              <Text style={styles.prominentPointsValue}>
+                {availablePoints.toLocaleString('en-IN')}
+              </Text>
+              <Text style={styles.prominentPointsUnit}>PTS</Text>
+            </View>
+
+            <View style={styles.rupeeValuePill}>
+              <Ionicons name="pricetag" size={13} color="#D4AF37" />
+              <Text style={styles.rupeeValueText}>
+                Worth ₹{availablePoints.toLocaleString('en-IN')} Cash Value (1 pt = ₹1)
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.cardActionsRow}>
+            <TouchableOpacity
+              style={styles.cardRedeemBtn}
+              onPress={() => setActiveView('redeem')}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="gift" size={15} color="#111111" style={{ marginRight: 6 }} />
+              <Text style={styles.cardRedeemText}>Redeem Points</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.cardHistoryBtn}
+              onPress={() => setActiveView('history')}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.cardHistoryBtnText}>History</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Your Progress Section matching Screen 13 */}
@@ -679,61 +714,144 @@ const styles = StyleSheet.create({
     color: '#111111',
   },
 
-  // Screen 13: Gold Member Card
+  // Screen 13: Luxury Gold Member Card
   goldMemberCard: {
-    backgroundColor: '#F7F3EC',
-    borderRadius: 12,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: '#EAE1D0',
+    backgroundColor: '#161616',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1.5,
+    borderColor: '#C5A880',
     marginBottom: 20,
+    shadowColor: '#C5A880',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 5,
   },
   cardHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(197, 168, 128, 0.25)',
+    paddingBottom: 12,
   },
   tierShieldRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+  goldIconBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(212, 175, 55, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#D4AF37',
+  },
   tierName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#111111',
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
   },
   tierMemberSince: {
     fontSize: 11,
-    color: '#8E8E93',
-    marginTop: 1,
+    color: '#C5A880',
+    marginTop: 2,
+    fontWeight: '500',
   },
-  pointsColumnsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  hubklubWatermarkPill: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  hubklubWatermarkText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#E0E0E0',
+    letterSpacing: 1,
+  },
+  prominentPointsContainer: {
+    marginVertical: 4,
     marginBottom: 16,
   },
-  pointsCol: {
-    flex: 1,
-  },
-  pointsColLabel: {
+  prominentPointsLabel: {
     fontSize: 11,
-    color: '#666666',
+    fontWeight: '700',
+    color: '#C5A880',
+    letterSpacing: 1.2,
     marginBottom: 4,
   },
-  pointsColVal: {
-    fontSize: 22,
+  prominentPointsNumberRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8,
+  },
+  prominentPointsValue: {
+    fontSize: 38,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
+  },
+  prominentPointsUnit: {
+    fontSize: 16,
     fontWeight: '800',
-    color: '#111111',
+    color: '#D4AF37',
+  },
+  rupeeValuePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(212, 175, 55, 0.12)',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    marginTop: 8,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.3)',
+  },
+  rupeeValueText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#E8D5B5',
+  },
+  cardActionsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 4,
   },
   cardRedeemBtn: {
-    backgroundColor: '#111111',
+    flex: 2,
+    backgroundColor: '#C5A880',
     borderRadius: 8,
-    height: 42,
+    height: 44,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
   },
   cardRedeemText: {
+    color: '#111111',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  cardHistoryBtn: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 8,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  cardHistoryBtnText: {
     color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '700',
@@ -968,26 +1086,31 @@ const styles = StyleSheet.create({
 
   // Screen 16 Styles
   balanceInfoBox: {
-    backgroundColor: '#F8F8F8',
-    borderRadius: 8,
-    padding: 16,
+    backgroundColor: '#161616',
+    borderRadius: 14,
+    padding: 20,
     marginBottom: 20,
     alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#C5A880',
+    shadowColor: '#C5A880',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   balanceInfoLabel: {
-    fontSize: 12,
-    color: '#666666',
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#C5A880',
+    letterSpacing: 1.2,
     marginBottom: 4,
   },
   balanceInfoValue: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#111111',
-  },
-  balanceInfoSub: {
-    fontSize: 12,
-    color: '#8E8E93',
-    marginTop: 2,
+    fontSize: 36,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
   },
   selectAmountTitle: {
     fontSize: 14,

@@ -560,7 +560,49 @@ class ApiClient {
   }
 
   async getLoyaltyBalance(): Promise<HubklubBalance> {
-    return this.request<HubklubBalance>('/loyalty/balance');
+    let balance: HubklubBalance;
+    try {
+      balance = await this.request<HubklubBalance>('/loyalty/balance');
+    } catch {
+      balance = {
+        customer_id: this.customerId,
+        available_points: this.getPointsBalance(this.customerId),
+        redemption_value_inr: this.getPointsBalance(this.customerId),
+        expiring_soon_points: 0,
+        points_batches: [],
+        is_demo: false,
+      };
+    }
+
+    const currentProfile = this.getLocalProfile(this.customerId);
+
+    // Reconcile with in-store billing receipts
+    try {
+      const invoices = await this.request<any[]>('/staff/billing/invoices');
+      if (Array.isArray(invoices)) {
+        const matchingInvoices = invoices.filter((inv) => this.isInvoiceMatch(inv, currentProfile));
+        if (matchingInvoices.length > 0) {
+          const totalEarned = matchingInvoices.reduce(
+            (acc, inv) => acc + (Number(inv.points_earned_this_bill) || 0),
+            0
+          );
+          const totalRedeemed = matchingInvoices.reduce(
+            (acc, inv) => acc + (Number(inv.points_redeemed) || 0),
+            0
+          );
+          const netBillPoints = Math.max(0, totalEarned - totalRedeemed);
+
+          balance.available_points = Math.max(balance.available_points || 0, netBillPoints);
+          balance.redemption_value_inr = balance.available_points;
+        }
+      }
+    } catch (e) {
+      // Keep base balance
+    }
+
+    // Keep internal customerPoints in sync
+    this.customerPoints.set(this.customerId, balance.available_points);
+    return balance;
   }
 
   async getLoyaltyTransactions(): Promise<PointsTransaction[]> {
