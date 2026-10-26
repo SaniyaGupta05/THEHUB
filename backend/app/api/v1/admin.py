@@ -53,6 +53,7 @@ def get_admin_customers():
         return [
             {
                 "id": c.id,
+                "name": f"{c.first_name} {c.last_name or ''}".strip(),
                 "first_name": c.first_name,
                 "last_name": c.last_name,
                 "email": c.email,

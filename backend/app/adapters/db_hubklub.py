@@ -43,8 +43,8 @@ class DBHubklubAdapter(HubklubAdapterBase):
                 tier_val = LoyaltyTier(c.tier)
             except Exception:
                 tier_val = LoyaltyTier.CLASSIC
-
-        addresses = [Address(**a) for a in (c.saved_addresses or [])]
+        raw_addresses: List[Dict[str, Any]] = c.saved_addresses if isinstance(c.saved_addresses, list) else []
+        addresses = [Address(**a) for a in raw_addresses if isinstance(a, dict)]
 
         return CustomerProfile(
             id=c.id,
@@ -91,13 +91,13 @@ class DBHubklubAdapter(HubklubAdapterBase):
             if c:
                 return self._convert_db_customer(c)
 
-            # 3. Match by phone digits (exact 10 digits required)
+            # 3. Match by phone digits (10 digits comparison)
             q_digits = "".join(ch for ch in q if ch.isdigit())
             if q_digits and len(q_digits) >= 10:
                 all_customers = db.query(DBCustomer).all()
                 for cust in all_customers:
                     c_digits = "".join(ch for ch in (cust.phone or "") if ch.isdigit())
-                    if c_digits == q_digits or c_digits.endswith(q_digits[-10:]):
+                    if len(c_digits) >= 10 and c_digits[-10:] == q_digits[-10:]:
                         return self._convert_db_customer(cust)
 
             # 4. Match by name (only if query is not a phone number)
@@ -351,7 +351,8 @@ class DBHubklubAdapter(HubklubAdapterBase):
             # Check Idempotency Key in DB
             idem = db.query(DBIdempotencyKey).filter(DBIdempotencyKey.key == request.idempotency_key).first()
             if idem:
-                cached = LoyaltyRedemptionResponse(**idem.response_json)
+                resp_data: Dict[str, Any] = idem.response_json if isinstance(idem.response_json, dict) else {}
+                cached = LoyaltyRedemptionResponse(**resp_data)
                 if cached.customer_id != request.customer_id:
                     raise PermissionError("Access violation: Idempotency key belongs to another customer.")
                 return cached

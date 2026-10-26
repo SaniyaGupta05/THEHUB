@@ -164,7 +164,7 @@ class ApiClient {
     };
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
 
     try {
       const response = await fetch(url, { ...options, headers, signal: controller.signal });
@@ -182,10 +182,10 @@ class ApiClient {
       if (err.status && err.status >= 400 && err.status < 500) {
         throw err;
       }
-      // Registration MUST be recorded in the live database so the web dashboard can see it
-      if (endpoint.includes('/register')) {
-        console.warn(`[Registration Server Error] Failed to reach live backend at ${url}:`, err.message);
-        throw new Error(err.message || 'Unable to register account on server. Please check your internet connection.');
+      // Registration & Login MUST be checked against the live server
+      if (endpoint.includes('/register') || endpoint.includes('/login')) {
+        console.warn(`[Auth Server Error] Failed to reach live backend at ${url}:`, err.message);
+        throw new Error(err.message || 'Unable to connect to live server. Please verify your connection or retry in a moment if the cloud server is waking up.');
       }
       // If server is not responding, timed out, or connection refused on read endpoints, fallback to local mock data handler
       console.log(`[Offline Fallback] API call ${endpoint}: ${err.message}`);
