@@ -184,6 +184,7 @@ export interface HubklubSummary {
   annual_bonus: HubklubAnnualBonusProgress;
   recent_transactions: PointsTransaction[];
   active_rate_bands: Array<{ min: number; max: number; rate: number }>;
+  jubilee_scheme?: JubileeSchemeProgress;
   is_demo: boolean;
 }
 
@@ -200,6 +201,37 @@ export interface PointsCalculationResult {
   bonus_points: number;
   total_points: number;
   total_rupee_value: number;
+  is_demo: boolean;
+}
+
+export interface JubileeRewardTier {
+  tier_id: string;
+  min_spend: number;
+  max_spend?: number;
+  title: string;
+  reward_name: string;
+  description: string;
+  icon: string;
+  is_unlocked: boolean;
+  progress_percent: number;
+}
+
+export interface JubileeSchemeProgress {
+  customer_id: string;
+  scheme_name: string;
+  start_date: string;
+  end_date: string;
+  accumulated_spend: number;
+  unlocked_rewards: string[];
+  event_pass_unlocked?: boolean;
+  silver_coin_unlocked?: boolean;
+  silver_ganesha_idol_unlocked?: boolean;
+  surprise_gift_unlocked?: boolean;
+  highest_unlocked_reward?: string | null;
+  tiers: JubileeRewardTier[];
+  next_reward?: string;
+  amount_needed_for_next: number;
+  progress_percent: number;
   is_demo: boolean;
 }
 

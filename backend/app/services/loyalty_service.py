@@ -9,6 +9,7 @@ from app.models.schemas import (
     PointsTransaction,
     LoyaltyRedemptionRequest,
     LoyaltyRedemptionResponse,
+    JubileeSchemeProgress,
 )
 from app.config import settings
 
@@ -43,6 +44,7 @@ class LoyaltyService:
         balance = self.get_balance(customer_id)
         annual_bonus = self.get_annual_bonus(customer_id)
         recent_txs = self.get_transactions(customer_id)[:10]
+        jubilee = self.get_jubilee_progress(customer_id)
 
         return HubklubSummary(
             membership=membership,
@@ -50,8 +52,12 @@ class LoyaltyService:
             annual_bonus=annual_bonus,
             recent_transactions=recent_txs,
             active_rate_bands=settings.LOYALTY_RATE_BANDS,
+            jubilee_scheme=jubilee,
             is_demo=True,
         )
+
+    def get_jubilee_progress(self, customer_id: str) -> JubileeSchemeProgress:
+        return self.adapter.get_jubilee_progress(customer_id)
 
     def calculate_points_for_spend(self, amount: float) -> int:
         return self.adapter.calculate_estimated_points_for_purchase(amount)

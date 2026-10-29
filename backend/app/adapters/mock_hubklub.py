@@ -108,10 +108,14 @@ class MockHubklubAdapter(HubklubAdapterBase):
         return None
 
     def calculate_estimated_points_for_purchase(self, purchase_amount: float) -> int:
-        for band in settings.LOYALTY_RATE_BANDS:
-            if band["min"] <= purchase_amount <= band["max"]:
-                return int(round(purchase_amount * band["rate"]))
-        return int(round(purchase_amount * 0.03))
+        if purchase_amount <= 0:
+            return 0
+        if purchase_amount <= 20000.0:
+            return int(round(purchase_amount * 0.03))
+        elif purchase_amount <= 50000.0:
+            return int(round(purchase_amount * 0.05))
+        else:
+            return int(round(purchase_amount * 0.06))
 
     def get_membership_status(self, customer_id: str) -> HubklubMembershipStatus:
         customer = self.get_customer_profile(customer_id)
@@ -397,6 +401,28 @@ class MockHubklubAdapter(HubklubAdapterBase):
             cust.lifetime_spend += purchase_amount
             if purchase_amount > getattr(cust, "max_single_purchase", 0.0):
                 setattr(cust, "max_single_purchase", purchase_amount)
+
+            # Annual Bonus check: On accumulated purchase of INR 1,00,000 and above, get 20% bonus of total points earned in the year
+            if cust.annual_spend_current_year >= settings.LOYALTY_ANNUAL_BONUS_SPEND_THRESHOLD:
+                target_bonus = int(round(account.get("points_earned_current_year", 0) * settings.LOYALTY_ANNUAL_BONUS_MULTIPLIER))
+                delta_bonus = target_bonus - account.get("annual_bonus_points", 0)
+                if delta_bonus > 0:
+                    account["available_points"] += delta_bonus
+                    account["annual_bonus_points"] = target_bonus
+                    account["annual_bonus_awarded"] = True
+                    bonus_tx = PointsTransaction(
+                        id=f"tx_bonus_{uuid.uuid4().hex[:8]}",
+                        customer_id=customer_id,
+                        type=TransactionType.BONUS,
+                        points=delta_bonus,
+                        rupee_equivalent=delta_bonus * settings.LOYALTY_POINT_RUPEE_VALUE,
+                        order_id=order_id,
+                        description=f"20% Annual Milestone Bonus (+{delta_bonus} pts) for ₹1,00,000+ accumulated spend",
+                        timestamp=datetime.now(timezone.utc),
+                        expiry_date=expiry,
+                        status="Active",
+                    )
+                    account.setdefault("transactions", []).append(bonus_tx)
 
         return tx
 

@@ -11,6 +11,7 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
@@ -142,9 +143,16 @@ export const AuthModal: React.FC = () => {
         <View style={styles.authModalContainer}>
           {/* Modal Header */}
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>
-              {authModalTab === 'create' ? 'Create New Account' : 'Sign In to THE HUB'}
-            </Text>
+            <View style={styles.modalHeaderBranding}>
+              <Image
+                source={require('../../assets/the_hub_logo.png')}
+                style={styles.modalBrandLogo}
+                resizeMode="contain"
+              />
+              <Text style={styles.modalTitle}>
+                {authModalTab === 'create' ? 'Create New Account' : 'Sign In to THE HUB'}
+              </Text>
+            </View>
             <TouchableOpacity onPress={closeAuthModal} style={styles.closeBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
               <Ionicons name="close" size={24} color="#111111" />
             </TouchableOpacity>
@@ -404,14 +412,23 @@ const styles = StyleSheet.create({
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 16,
   },
+  modalHeaderBranding: {
+    flex: 1,
+    gap: 4,
+  },
+  modalBrandLogo: {
+    width: 104,
+    height: 32,
+    marginBottom: 4,
+  },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '700',
     color: '#111111',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
   closeBtn: {
     padding: 4,

@@ -7,12 +7,14 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../api/client';
-import { HubklubSummary } from '../types';
+import { HubklubSummary, JubileeSchemeProgress } from '../types';
+import { PointsCalculator } from '../components/PointsCalculator';
 
 type HubklubView =
   | 'dashboard' // Screen 13
@@ -20,13 +22,17 @@ type HubklubView =
   | 'rules' // Screen 15
   | 'redeem' // Screen 16
   | 'history' // Screen 17
-  | 'expiry'; // Screen 18
+  | 'expiry' // Screen 18
+  | 'jubilee'; // 25-Year Silver Jubilee Celebration Scheme
+
+const GO_SILVER_LOGO = require('../../assets/go_silver_logo.png');
 
 export const HubklubScreen: React.FC = () => {
   const { activeCustomerId, customerProfile, pointsBalance, isLoggedIn, refreshProfile, openAuthModal } = useAuth();
   const [activeView, setActiveView] = useState<HubklubView>('dashboard');
   const [summary, setSummary] = useState<HubklubSummary | null>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [jubilee, setJubilee] = useState<JubileeSchemeProgress | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEnrolling, setIsEnrolling] = useState(false);
 
@@ -40,12 +46,18 @@ export const HubklubScreen: React.FC = () => {
   const fetchLoyaltyData = async () => {
     setIsLoading(true);
     try {
-      const [data, txList] = await Promise.all([
+      const [data, txList, jub] = await Promise.all([
         apiClient.getLoyaltySummary().catch(() => null),
         apiClient.getLoyaltyTransactions().catch(() => []),
+        apiClient.getJubileeProgress().catch(() => null),
       ]);
       setSummary(data);
       setTransactions(Array.isArray(txList) ? txList : []);
+      if (jub) {
+        setJubilee(jub);
+      } else if (data?.jubilee_scheme) {
+        setJubilee(data.jubilee_scheme);
+      }
     } catch (e) {
       console.warn('Failed to load loyalty data', e);
     } finally {
@@ -219,7 +231,7 @@ export const HubklubScreen: React.FC = () => {
     );
   }
 
-  // SCREEN 15: POINTS & EARNING RULES
+  // SCREEN 15: THE POINT THAT MATTERS
   if (activeView === 'rules') {
     return (
       <SafeAreaView style={styles.container}>
@@ -227,51 +239,119 @@ export const HubklubScreen: React.FC = () => {
           <TouchableOpacity onPress={() => setActiveView('dashboard')} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={24} color="#111111" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>HUBKLUB</Text>
+          <Text style={styles.headerTitle}>THE POINT THAT MATTERS</Text>
           <View style={{ width: 24 }} />
         </View>
 
         <ScrollView contentContainerStyle={styles.screenPadding} showsVerticalScrollIndicator={false}>
-          <Text style={styles.screenTitle}>Points Earning Rules</Text>
-
-          {/* Rates Table matching Screen 15 */}
-          <View style={styles.tableCard}>
-            <View style={styles.tableHeaderRow}>
-              <Text style={styles.tableHeadLeft}>Purchase Value Range</Text>
-              <Text style={styles.tableHeadRight}>Points Rate</Text>
+          {/* Header Card */}
+          <View style={styles.schemeHeroCard}>
+            <View style={styles.schemeBadge}>
+              <Ionicons name="sparkles" size={13} color="#D4AF37" />
+              <Text style={styles.schemeBadgeText}>OFFICIAL LOYALTY SCHEME</Text>
             </View>
+            <Text style={styles.schemeHeroTitle}>THE POINT THAT MATTERS</Text>
+            <Text style={styles.schemeHeroSubtitle}>You earn points on every purchase</Text>
+          </View>
 
-            <View style={styles.tableDataRow}>
-              <Text style={styles.tableCellLeft}>Up to ₹20,000</Text>
-              <Text style={styles.tableCellRight}>3%</Text>
-            </View>
-
-            <View style={styles.tableDataRow}>
-              <Text style={styles.tableCellLeft}>₹20,001 - ₹50,000</Text>
-              <Text style={styles.tableCellRight}>5%</Text>
-            </View>
-
-            <View style={[styles.tableDataRow, { borderBottomWidth: 0 }]}>
-              <Text style={styles.tableCellLeft}>₹50,001 and above</Text>
-              <Text style={styles.tableCellRight}>6%</Text>
+          {/* Single Purchase Rule Banner */}
+          <View style={styles.singlePurchaseRuleBox}>
+            <Ionicons name="information-circle" size={18} color="#D4AF37" style={{ marginTop: 1 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.singlePurchaseRuleTitle}>SINGLE PURCHASE INVOICE RULE</Text>
+              <Text style={styles.singlePurchaseRuleDesc}>
+                Points rates (3%, 5%, 6%) are earned strictly on the value of each single purchase bill. Bills are not combined to determine slab rates.
+              </Text>
             </View>
           </View>
 
-          <Text style={styles.footnoteText}>
-            Rates are configurable and may be based on either invoice value or accumulated purchases. Please confirm with The HUB team.
-          </Text>
+          {/* Slabs Table matching exact scheme */}
+          <View style={styles.tableCard}>
+            <View style={styles.tableHeaderRow}>
+              <Text style={styles.tableHeadLeft}>Single Invoice Value</Text>
+              <Text style={styles.tableHeadRight}>Points Earned</Text>
+            </View>
+
+            <View style={styles.tableDataRow}>
+              <View>
+                <Text style={styles.tableCellLeft}>Up To ₹ 20,000</Text>
+                <Text style={styles.tableCellSub}>Single purchase bill</Text>
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={styles.tableCellRight}>Get 3%</Text>
+                <Text style={styles.tableCellSub}>of invoice value</Text>
+              </View>
+            </View>
+
+            <View style={styles.tableDataRow}>
+              <View>
+                <Text style={styles.tableCellLeft}>₹ 20,001 to ₹ 50,000</Text>
+                <Text style={styles.tableCellSub}>Single purchase bill</Text>
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={styles.tableCellRight}>Get 5%</Text>
+                <Text style={styles.tableCellSub}>of invoice value</Text>
+              </View>
+            </View>
+
+            <View style={[styles.tableDataRow, { borderBottomWidth: 0 }]}>
+              <View>
+                <Text style={styles.tableCellLeft}>₹ 50,001 and above</Text>
+                <Text style={styles.tableCellSub}>Single purchase bill</Text>
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={styles.tableCellRight}>Get 6%</Text>
+                <Text style={styles.tableCellSub}>of invoice value</Text>
+              </View>
+            </View>
+          </View>
 
           {/* Annual Bonus Card */}
-          <View style={styles.bonusCard}>
-            <View style={styles.bonusIconBox}>
-              <Ionicons name="gift-outline" size={22} color="#C5A880" />
+          <View style={styles.bonusHighlightCard}>
+            <View style={styles.bonusIconCircle}>
+              <Ionicons name="trophy" size={22} color="#D4AF37" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.bonusTitle}>Annual Bonus</Text>
-              <Text style={styles.bonusDesc}>
-                At ₹1,00,000+ annual purchases, get 20% bonus on total points earned in the year.
+              <Text style={styles.bonusHighlightTitle}>20% Annual Milestone Bonus</Text>
+              <Text style={styles.bonusHighlightDesc}>
+                On accumalated purchase of INR 1,00,000 and above, you get 20% bonus of the total points earned in the year
               </Text>
             </View>
+          </View>
+
+          {/* Core Scheme Rules: Redemption & Validity */}
+          <View style={styles.schemeDualRow}>
+            <View style={styles.schemeDualBox}>
+              <View style={styles.schemeDualIconCircle}>
+                <Ionicons name="pricetag" size={18} color="#D4AF37" />
+              </View>
+              <Text style={styles.schemeDualLabel}>Redemption</Text>
+              <Text style={styles.schemeDualValue}>1 Point = ₹ 1</Text>
+              <Text style={styles.schemeDualSub}>
+                Each point is equivelant to redemption of Rs. 1
+              </Text>
+            </View>
+
+            <View style={styles.schemeDualBox}>
+              <View style={styles.schemeDualIconCircle}>
+                <Ionicons name="time" size={18} color="#D4AF37" />
+              </View>
+              <Text style={styles.schemeDualLabel}>Points Validity</Text>
+              <Text style={styles.schemeDualValue}>2 Years</Text>
+              <Text style={styles.schemeDualSub}>
+                Accumulated points validity: 2 Years
+              </Text>
+            </View>
+          </View>
+
+          {/* Interactive Calculator */}
+          <View style={{ marginTop: 20 }}>
+            <PointsCalculator
+              onPointsCredited={() => {
+                fetchLoyaltyData();
+                refreshProfile();
+              }}
+            />
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -542,6 +622,222 @@ export const HubklubScreen: React.FC = () => {
     );
   }
 
+  // SCREEN: GO SILVER CELEBRATION SCHEME (2027 - 2028)
+  if (activeView === 'jubilee') {
+    const accSpend = jubilee?.accumulated_spend ?? 0;
+    const progress = Math.min(100, Math.round((accSpend / 200000) * 100));
+
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.topHeader}>
+          <TouchableOpacity onPress={() => setActiveView('dashboard')} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={24} color="#111111" />
+          </TouchableOpacity>
+          <View style={styles.headerLogoTitleWrap}>
+            <Image source={GO_SILVER_LOGO} style={styles.headerGoSilverLogo} resizeMode="contain" />
+            <Text style={styles.headerTitle}>Go silver (2027-2028)</Text>
+          </View>
+          <View style={{ width: 24 }} />
+        </View>
+
+        <ScrollView contentContainerStyle={styles.screenPadding} showsVerticalScrollIndicator={false}>
+          {/* Hero Celebration Banner in Pure Silver Tone */}
+          <View style={styles.jubileeHeroCard}>
+            {/* Upcoming Status Badge on its own line */}
+            <View style={styles.jubileeHeroBadgeRow}>
+              <View style={styles.jubileeHeroBadge}>
+                <Ionicons name="time-outline" size={13} color="#0F172A" />
+                <Text style={styles.jubileeHeroBadgeText}>UPCOMING SCHEME • STARTS 1 JAN 2027</Text>
+              </View>
+            </View>
+
+            {/* Title & Medallion Row */}
+            <View style={styles.jubileeHeroTitleRow}>
+              <View style={{ flex: 1, paddingRight: 12 }}>
+                <Text style={styles.jubileeHeroTitle}>Go silver (2027-2028)</Text>
+                <Text style={styles.jubileeHeroTagline}>25th Anniversary Celebration</Text>
+              </View>
+              <Image source={GO_SILVER_LOGO} style={styles.jubileeHeroLogo} resizeMode="contain" />
+            </View>
+            <Text style={styles.jubileeHeroSubtitle}>
+              THE HUB is completing 25 glorious years in 2028! The exclusive Go Silver Celebration Scheme officially begins on 1st January 2027. All in-store and online purchases billed between 1st Jan 2027 and 1st Aug 2028 will automatically accumulate toward certified pure silver gifts and VIP celebration event passes.
+            </Text>
+
+            <View style={styles.jubileeHeroDatesRow}>
+              <View style={styles.jubileeDatePill}>
+                <Ionicons name="calendar-outline" size={13} color="#E2E8F0" />
+                <Text style={styles.jubileeDatePillText}>1 Jan 2027 – 1 Aug 2028</Text>
+              </View>
+              <View style={styles.jubileeDurationPill}>
+                <Text style={styles.jubileeDurationPillText}>19 Months Window</Text>
+              </View>
+              <View style={[styles.jubileeDurationPill, { backgroundColor: 'rgba(56, 189, 248, 0.15)', borderColor: '#38BDF8' }]}>
+                <Text style={[styles.jubileeDurationPillText, { color: '#38BDF8', fontWeight: '700' }]}>Event Not Started Yet</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* User Progress Tracker Card in Silver Tone */}
+          <View style={styles.jubileeTrackerCard}>
+            <View style={styles.jubileeTrackerHeader}>
+              <View>
+                <Text style={styles.jubileeTrackerLabel}>YOUR GO SILVER ACCUMULATED SPEND</Text>
+                <Text style={styles.jubileeTrackerAmount}>
+                  ₹ {accSpend.toLocaleString('en-IN')}
+                </Text>
+                <Text style={styles.jubileeStartsNotice}>
+                  {accSpend === 0
+                    ? 'Event not started yet • Purchases will begin accumulating from 1 Jan 2027'
+                    : 'Accumulation active for 2027-2028'}
+                </Text>
+              </View>
+              <View style={styles.jubileeTargetBox}>
+                <Text style={styles.jubileeTargetPercent}>{progress}%</Text>
+                <Text style={styles.jubileeTargetLabel}>of ₹2,00,000</Text>
+              </View>
+            </View>
+
+            <View style={styles.jubileeProgressBarTrack}>
+              <View style={[styles.jubileeProgressBarFill, { width: `${progress}%` }]} />
+            </View>
+
+            <Text style={styles.jubileeNextGoalText}>
+              {accSpend === 0
+                ? '⏳ The Go Silver Celebration Scheme period starts on 1st January 2027. All purchases billed during the 19-month window will accumulate here to unlock certified pure silver rewards and event passes!'
+                : jubilee?.surprise_gift_unlocked
+                ? '🎉 Congratulations! You have unlocked ALL 4 GO SILVER Rewards, including the Grand Surprise Luxury Gift & Event Entry!'
+                : jubilee?.silver_ganesha_idol_unlocked
+                ? `You have unlocked the Pure Silver Ganesha Idol & Event Pass! Spend ₹${Math.max(0, 200000 - accSpend).toLocaleString('en-IN')} more to unlock the Grand Surprise Luxury Gift.`
+                : jubilee?.silver_coin_unlocked
+                ? `You have unlocked the Pure Silver Coin & Event Pass! Spend ₹${Math.max(0, 200000 - accSpend).toLocaleString('en-IN')} more for the Grand Surprise Gift.`
+                : jubilee?.event_pass_unlocked
+                ? `You have unlocked the GO SILVER Celebration Event Pass! Spend ₹${Math.max(0, 100000 - accSpend).toLocaleString('en-IN')} more to unlock the Certified Pure Silver Coin.`
+                : `Spend ₹${Math.max(0, 50000 - accSpend).toLocaleString('en-IN')} on purchases during 2027-2028 to unlock your GO SILVER Celebration Event Pass.`}
+            </Text>
+          </View>
+
+          {/* Milestone 1: Event Pass */}
+          <View style={[styles.milestoneCard, jubilee?.event_pass_unlocked && styles.milestoneCardActive]}>
+            <View style={styles.milestoneIconWrap}>
+              <Text style={{ fontSize: 26 }}>🎟️</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <View style={styles.milestoneHeaderRow}>
+                <Text style={styles.milestoneTitle}>GO SILVER Event Pass</Text>
+                <View style={[styles.milestoneStatusBadge, jubilee?.event_pass_unlocked ? styles.badgeUnlocked : styles.badgeLocked]}>
+                  <Text style={[styles.milestoneStatusText, jubilee?.event_pass_unlocked ? styles.statusUnlockedText : styles.statusLockedText]}>
+                    {jubilee?.event_pass_unlocked ? 'UNLOCKED' : 'SPEND > ₹50,000'}
+                  </Text>
+                </View>
+              </View>
+              <Text style={styles.milestoneCriteria}>Qualification: Spend more than ₹50,000</Text>
+              <Text style={styles.milestoneDesc}>
+                Exclusive Invitation Pass to attend THE HUB's grand 25-Year GO SILVER Celebration Mega Event with gala dinner, fashion showcase, and live entertainment.
+              </Text>
+            </View>
+          </View>
+
+          {/* Milestone 2: Silver Coin */}
+          <View style={[styles.milestoneCard, jubilee?.silver_coin_unlocked && styles.milestoneCardActive]}>
+            <View style={[styles.milestoneIconWrap, styles.milestoneCoinIconWrap]}>
+              <Image source={GO_SILVER_LOGO} style={styles.milestoneCoinImg} resizeMode="contain" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <View style={styles.milestoneHeaderRow}>
+                <Text style={styles.milestoneTitle}>Certified Pure Silver Coin</Text>
+                <View style={[styles.milestoneStatusBadge, jubilee?.silver_coin_unlocked ? styles.badgeUnlocked : styles.badgeLocked]}>
+                  <Text style={[styles.milestoneStatusText, jubilee?.silver_coin_unlocked ? styles.statusUnlockedText : styles.statusLockedText]}>
+                    {jubilee?.silver_coin_unlocked ? 'UNLOCKED' : 'SPEND > ₹1,00,000'}
+                  </Text>
+                </View>
+              </View>
+              <Text style={styles.milestoneCriteria}>Qualification: Spend more than ₹1,00,000</Text>
+              <Text style={styles.milestoneDesc}>
+                Custom-minted 25th Anniversary Certified Pure Silver Coin (999 Purity) hallmarked with THE HUB commemorative anniversary insignia.
+              </Text>
+            </View>
+          </View>
+
+          {/* Milestone 3: Silver Ganesha Idol */}
+          <View style={[styles.milestoneCard, jubilee?.silver_ganesha_idol_unlocked && styles.milestoneCardActive]}>
+            <View style={styles.milestoneIconWrap}>
+              <Text style={{ fontSize: 26 }}>🪔</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <View style={styles.milestoneHeaderRow}>
+                <Text style={styles.milestoneTitle}>Pure Silver Lord Ganesha Idol</Text>
+                <View style={[styles.milestoneStatusBadge, jubilee?.silver_ganesha_idol_unlocked ? styles.badgeUnlocked : styles.badgeLocked]}>
+                  <Text style={[styles.milestoneStatusText, jubilee?.silver_ganesha_idol_unlocked ? styles.statusUnlockedText : styles.statusLockedText]}>
+                    {jubilee?.silver_ganesha_idol_unlocked ? 'UNLOCKED' : '₹1,00,000 TO ₹2,00,000'}
+                  </Text>
+                </View>
+              </View>
+              <Text style={styles.milestoneCriteria}>Qualification: Spend between ₹1,00,000 and ₹2,00,000</Text>
+              <Text style={styles.milestoneDesc}>
+                Auspicious handcrafted Pure Silver Lord Ganesha Idol — an upgraded divine keepsake symbolizing prosperity, auspicious beginnings, and enduring grace.
+              </Text>
+            </View>
+          </View>
+
+          {/* Milestone 4: Surprise Luxury Gift */}
+          <View style={[styles.milestoneCard, jubilee?.surprise_gift_unlocked && styles.milestoneCardActive]}>
+            <View style={styles.milestoneIconWrap}>
+              <Text style={{ fontSize: 26 }}>🎁</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <View style={styles.milestoneHeaderRow}>
+                <Text style={styles.milestoneTitle}>Grand Surprise Luxury Gift</Text>
+                <View style={[styles.milestoneStatusBadge, jubilee?.surprise_gift_unlocked ? styles.badgeUnlocked : styles.badgeLocked]}>
+                  <Text style={[styles.milestoneStatusText, jubilee?.surprise_gift_unlocked ? styles.statusUnlockedText : styles.statusLockedText]}>
+                    {jubilee?.surprise_gift_unlocked ? 'UNLOCKED' : 'SPEND > ₹2,00,000'}
+                  </Text>
+                </View>
+              </View>
+              <Text style={styles.milestoneCriteria}>Qualification: Spend more than ₹2,00,000</Text>
+              <Text style={styles.milestoneDesc}>
+                The ultimate GO SILVER tribute! An exclusive Grand Surprise Luxury Gift Hamper with curated bespoke merchandise and VIP concierge hospitality at the celebration.
+              </Text>
+            </View>
+          </View>
+
+          {/* Scheme Information & FAQs */}
+          <View style={styles.jubileeInfoBox}>
+            <View style={styles.jubileeInfoTitleRow}>
+              <Ionicons name="information-circle" size={18} color="#94A3B8" />
+              <Text style={styles.jubileeInfoTitle}>GO SILVER DETAILS & FAQ</Text>
+            </View>
+            <View style={styles.jubileeFaqItem}>
+              <Text style={styles.faqQ}>How are purchases accumulated?</Text>
+              <Text style={styles.faqA}>
+                All in-store and online purchases billed to your registered mobile number between 1st January 2027 and 1st August 2028 are automatically accumulated under your GO SILVER ledger.
+              </Text>
+            </View>
+            <View style={styles.jubileeFaqItem}>
+              <Text style={styles.faqQ}>Do I still earn normal HUBKLUB reward points?</Text>
+              <Text style={styles.faqA}>
+                YES! You continue earning standard HUBKLUB points (3% to 6% per invoice + 20% annual points bonus at ₹1L) completely unaffected. These GO SILVER physical rewards and event entry are special bonus gifts.
+              </Text>
+            </View>
+            <View style={styles.jubileeFaqItem}>
+              <Text style={styles.faqQ}>When and where will the gifts be distributed?</Text>
+              <Text style={styles.faqA}>
+                Physical silver gifts (Coin / Ganesha Idol / Surprise Gift) and celebration passes will be handed over to qualifying members during THE HUB's 25th Year GO SILVER Celebration Event in August 2028.
+              </Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={styles.blackActionBtn}
+            onPress={() => setActiveView('dashboard')}
+            activeOpacity={0.88}
+          >
+            <Text style={styles.blackActionBtnText}>Back to HUBKLUB Dashboard</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   const userTier = customerProfile?.tier || summary?.membership?.tier || (annualSpend >= 100000 ? 'Gold' : 'Classic');
   const memberSinceDate = customerProfile?.member_since ? new Date(customerProfile.member_since) : null;
   const memberSinceStr =
@@ -552,11 +848,6 @@ export const HubklubScreen: React.FC = () => {
   // SCREEN 13: MAIN HUBKLUB DASHBOARD
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.topHeader}>
-        <Text style={styles.dashboardHeaderTitle}>HUBKLUB</Text>
-      </View>
-
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Sub-view switcher shortcuts */}
         <View style={styles.shortcutsRow}>
@@ -564,7 +855,11 @@ export const HubklubScreen: React.FC = () => {
             <Text style={styles.shortcutText}>Eligibility</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setActiveView('rules')} style={styles.shortcutChip}>
-            <Text style={styles.shortcutText}>Earning Rules</Text>
+            <Text style={styles.shortcutText}>The Point That Matters</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setActiveView('jubilee')} style={[styles.shortcutChip, styles.jubileeShortcutChip]}>
+            <Image source={GO_SILVER_LOGO} style={styles.shortcutLogoImg} resizeMode="contain" />
+            <Text style={[styles.shortcutText, styles.jubileeShortcutText]}>Go silver (2027-2028)</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setActiveView('history')} style={styles.shortcutChip}>
             <Text style={styles.shortcutText}>History</Text>
@@ -587,7 +882,7 @@ export const HubklubScreen: React.FC = () => {
               </View>
             </View>
             <View style={styles.hubklubWatermarkPill}>
-              <Text style={styles.hubklubWatermarkText}>THE HUB</Text>
+              <Text style={styles.hubklubWatermarkText}>HUBKLUB</Text>
             </View>
           </View>
 
@@ -653,6 +948,145 @@ export const HubklubScreen: React.FC = () => {
             </View>
           </View>
         </View>
+
+        {/* THE POINT THAT MATTERS Scheme Promo Section */}
+        <View style={styles.schemeDashboardSection}>
+          <View style={styles.schemeDashboardHeaderRow}>
+            <Text style={styles.progressSectionTitle}>THE POINT THAT MATTERS</Text>
+            <TouchableOpacity onPress={() => setActiveView('rules')}>
+              <Text style={styles.seeAllRulesText}>View Details &gt;</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            style={styles.schemePromoCard}
+            onPress={() => setActiveView('rules')}
+            activeOpacity={0.9}
+          >
+            <View style={styles.schemePromoTop}>
+              <View style={styles.schemePromoPill}>
+                <Ionicons name="sparkles" size={12} color="#D4AF37" />
+                <Text style={styles.schemePromoPillText}>EARN ON EVERY PURCHASE</Text>
+              </View>
+              <Text style={styles.schemePromoRateHighlight}>Up to 6% Points Back</Text>
+            </View>
+            <View style={styles.schemePromoGrid}>
+              <View style={styles.schemePromoItem}>
+                <Text style={styles.schemePromoItemSlab}>Up To ₹ 20,000</Text>
+                <Text style={styles.schemePromoItemRate}>3% Back</Text>
+              </View>
+              <View style={styles.schemePromoItemDivider} />
+              <View style={styles.schemePromoItem}>
+                <Text style={styles.schemePromoItemSlab}>₹ 20,001 - ₹ 50,000</Text>
+                <Text style={styles.schemePromoItemRate}>5% Back</Text>
+              </View>
+              <View style={styles.schemePromoItemDivider} />
+              <View style={styles.schemePromoItem}>
+                <Text style={styles.schemePromoItemSlab}>₹ 50,001 & Above</Text>
+                <Text style={styles.schemePromoItemRate}>6% Back</Text>
+              </View>
+            </View>
+            <View style={styles.schemePromoFooter}>
+              <View style={styles.schemePromoFootItem}>
+                <Ionicons name="gift-outline" size={13} color="#D4AF37" />
+                <Text style={styles.schemePromoFootText}>20% Annual Bonus at ₹1L+ spend</Text>
+              </View>
+              <View style={styles.schemePromoFootItem}>
+                <Ionicons name="time-outline" size={13} color="#D4AF37" />
+                <Text style={styles.schemePromoFootText}>1 pt = ₹1 • 2 Yrs Validity</Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* GO SILVER Scheme Promo Card */}
+        <View style={styles.jubileeDashboardSection}>
+          <View style={styles.schemeDashboardHeaderRow}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Image source={GO_SILVER_LOGO} style={styles.mainHeadingLogo} resizeMode="contain" />
+              <Text style={styles.progressSectionTitle}>Go silver (2027-2028)</Text>
+            </View>
+            <TouchableOpacity onPress={() => setActiveView('jubilee')}>
+              <Text style={styles.seeAllRulesText}>View Scheme &gt;</Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
+            style={styles.jubileePromoCard}
+            onPress={() => setActiveView('jubilee')}
+            activeOpacity={0.9}
+          >
+            <View style={styles.jubileePromoTopRow}>
+              <View style={styles.jubileeBadgePill}>
+                <Image source={GO_SILVER_LOGO} style={styles.jubileeBadgeMiniLogo} resizeMode="contain" />
+                <Text style={styles.jubileeBadgePillText}>UPCOMING SCHEME</Text>
+              </View>
+              <View style={styles.jubileeDateBadge}>
+                <Ionicons name="calendar-outline" size={11} color="#CBD5E1" />
+                <Text style={styles.jubileeDatesText}>1 Jan 2027 – 1 Aug 2028</Text>
+              </View>
+            </View>
+
+            <View style={styles.jubileePromoBodyRow}>
+              <View style={{ flex: 1, paddingRight: 10 }}>
+                <Text style={styles.jubileeCardHeadline}>
+                  Go silver (2027-2028)
+                </Text>
+                <Text style={styles.jubileeCardSub}>
+                  Scheme starts 1st Jan 2027. All purchases between Jan 2027 and Aug 2028 accumulate toward certified pure silver gifts & VIP event passes.
+                </Text>
+              </View>
+              <Image source={GO_SILVER_LOGO} style={styles.jubileePromoLogo} resizeMode="contain" />
+            </View>
+
+            {/* Quick 4 milestones pill grid */}
+            <View style={styles.jubileePillGrid}>
+              <View style={[styles.jubileeMilestonePill, jubilee?.event_pass_unlocked ? styles.jubileePillUnlocked : null]}>
+                <Text style={styles.jubileePillEmoji}>🎟️</Text>
+                <View>
+                  <Text style={styles.jubileePillTitle}>Event Pass</Text>
+                  <Text style={styles.jubileePillSpend}>Spend &gt; ₹50k</Text>
+                </View>
+              </View>
+              <View style={[styles.jubileeMilestonePill, jubilee?.silver_coin_unlocked ? styles.jubileePillUnlocked : null]}>
+                <Image source={GO_SILVER_LOGO} style={styles.jubileePillLogoImg} resizeMode="contain" />
+                <View>
+                  <Text style={styles.jubileePillTitle}>Silver Coin</Text>
+                  <Text style={styles.jubileePillSpend}>Spend &gt; ₹1L</Text>
+                </View>
+              </View>
+              <View style={[styles.jubileeMilestonePill, jubilee?.silver_ganesha_idol_unlocked ? styles.jubileePillUnlocked : null]}>
+                <Text style={styles.jubileePillEmoji}>🪔</Text>
+                <View>
+                  <Text style={styles.jubileePillTitle}>Silver Ganesha</Text>
+                  <Text style={styles.jubileePillSpend}>₹1L – ₹2L</Text>
+                </View>
+              </View>
+              <View style={[styles.jubileeMilestonePill, jubilee?.surprise_gift_unlocked ? styles.jubileePillUnlocked : null]}>
+                <Text style={styles.jubileePillEmoji}>🎁</Text>
+                <View>
+                  <Text style={styles.jubileePillTitle}>Surprise Gift</Text>
+                  <Text style={styles.jubileePillSpend}>Spend &gt; ₹2L</Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.jubileePromoFooterRow}>
+              <View>
+                <Text style={styles.jubileeSpendTrackerText}>
+                  Accumulated Spend:{' '}
+                  <Text style={{ fontWeight: '800', color: '#E2E8F0' }}>
+                    ₹{(jubilee?.accumulated_spend ?? 0).toLocaleString('en-IN')}
+                  </Text>
+                </Text>
+                <Text style={styles.jubileeStartsFootnote}>Event not started • Starts 1st Jan 2027</Text>
+              </View>
+              <View style={styles.jubileeViewBtn}>
+                <Text style={styles.jubileeViewBtnText}>View Details</Text>
+                <Ionicons name="arrow-forward" size={13} color="#0F172A" />
+              </View>
+            </View>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -671,6 +1105,27 @@ const styles = StyleSheet.create({
     height: 52,
     borderBottomWidth: 1,
     borderBottomColor: '#F2F2F2',
+  },
+  topHeaderBrandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  dashboardBrandLogo: {
+    width: 90,
+    height: 28,
+  },
+  hubklubTagBadge: {
+    backgroundColor: '#C5A880',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 5,
+  },
+  hubklubTagText: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    color: '#111111',
+    letterSpacing: 0.8,
   },
   dashboardHeaderTitle: {
     fontSize: 20,
@@ -770,12 +1225,14 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   hubklubWatermarkText: {
     fontSize: 10,
     fontWeight: '800',
     color: '#E0E0E0',
-    letterSpacing: 1,
+    letterSpacing: 1.2,
   },
   prominentPointsContainer: {
     marginVertical: 4,
@@ -1321,5 +1778,723 @@ const styles = StyleSheet.create({
   urgentText: {
     color: '#E53935',
     fontWeight: '700',
+  },
+
+  // THE POINT THAT MATTERS Styles
+  singlePurchaseRuleBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#FBF8F3',
+    borderWidth: 1,
+    borderColor: '#EFE5CE',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 14,
+    gap: 10,
+  },
+  singlePurchaseRuleTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#9E7D3B',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  singlePurchaseRuleDesc: {
+    fontSize: 11,
+    color: '#555555',
+    lineHeight: 16,
+  },
+  schemeHeroCard: {
+    backgroundColor: '#161616',
+    borderRadius: 12,
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#C5A880',
+  },
+  schemeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(212, 175, 55, 0.15)',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+    marginBottom: 8,
+  },
+  schemeBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#D4AF37',
+    letterSpacing: 0.8,
+  },
+  schemeHeroTitle: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 0.6,
+  },
+  schemeHeroSubtitle: {
+    fontSize: 13,
+    color: '#C5A880',
+    marginTop: 4,
+    fontWeight: '500',
+  },
+  tableCellSub: {
+    fontSize: 10,
+    color: '#8E8E93',
+    marginTop: 2,
+  },
+  bonusHighlightCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFDF9',
+    borderWidth: 1,
+    borderColor: '#E8D8BF',
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 14,
+    gap: 12,
+  },
+  bonusIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F7EEDF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bonusHighlightTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#111111',
+  },
+  bonusHighlightDesc: {
+    fontSize: 11,
+    color: '#666666',
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  schemeDualRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 10,
+  },
+  schemeDualBox: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#EEEEEE',
+    borderRadius: 10,
+    padding: 12,
+  },
+  schemeDualIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FAF5EE',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  schemeDualLabel: {
+    fontSize: 11,
+    color: '#8E8E93',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  schemeDualValue: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#111111',
+    marginVertical: 2,
+  },
+  schemeDualSub: {
+    fontSize: 10,
+    color: '#666666',
+    lineHeight: 14,
+  },
+
+  // Dashboard Promo Card
+  schemeDashboardSection: {
+    marginTop: 20,
+  },
+  schemeDashboardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  seeAllRulesText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#C5A880',
+  },
+  schemePromoCard: {
+    backgroundColor: '#1C1C1E',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#333333',
+  },
+  schemePromoTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  schemePromoPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(212, 175, 55, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  schemePromoPillText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#D4AF37',
+    letterSpacing: 0.5,
+  },
+  schemePromoRateHighlight: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  schemePromoGrid: {
+    flexDirection: 'row',
+    backgroundColor: '#262628',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  schemePromoItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  schemePromoItemSlab: {
+    fontSize: 10,
+    color: '#AAAAAA',
+    marginBottom: 2,
+    textAlign: 'center',
+  },
+  schemePromoItemRate: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#D4AF37',
+  },
+  schemePromoItemDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#3E3E42',
+  },
+  schemePromoFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: '#2C2C2E',
+    paddingTop: 10,
+  },
+  schemePromoFootItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  schemePromoFootText: {
+    fontSize: 10,
+    color: '#CCCCCC',
+  },
+  jubileeShortcutChip: {
+    backgroundColor: '#0F172A',
+    borderColor: '#CBD5E1',
+    borderWidth: 1.2,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  jubileeShortcutText: {
+    color: '#F1F5F9',
+    fontWeight: '800',
+  },
+  jubileeHeroCard: {
+    backgroundColor: '#161A23',
+    borderRadius: 16,
+    padding: 22,
+    marginBottom: 18,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    shadowColor: '#E2E8F0',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.28,
+    shadowRadius: 14,
+    elevation: 6,
+  },
+  headerLogoTitleWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  headerGoSilverLogo: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+  },
+  mainHeadingLogo: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+  },
+  jubileeStartsNotice: {
+    fontSize: 11,
+    color: '#94A3B8',
+    marginTop: 3,
+    fontStyle: 'italic',
+  },
+  jubileeStartsFootnote: {
+    fontSize: 10,
+    color: '#94A3B8',
+    marginTop: 2,
+  },
+  jubileeHeroBadgeRow: {
+    marginBottom: 12,
+  },
+  jubileeHeroTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  jubileeHeroTagline: {
+    fontSize: 12,
+    color: '#CBD5E1',
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  jubileeHeroLogo: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: '#CBD5E1',
+    backgroundColor: '#0F172A',
+  },
+  jubileeBadgeMiniLogo: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+  },
+  shortcutLogoImg: {
+    width: 15,
+    height: 15,
+    borderRadius: 7.5,
+    marginRight: 4,
+  },
+  milestoneCoinIconWrap: {
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+  },
+  milestoneCoinImg: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  jubileePromoBodyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  jubileePromoLogo: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    backgroundColor: '#0F172A',
+  },
+  jubileePillLogoImg: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+  },
+  jubileeHeroBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#F8FAFC',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    shadowColor: '#CBD5E1',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  jubileeHeroBadgeText: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#0F172A',
+    letterSpacing: 0.8,
+  },
+  jubileeHeroTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 0.4,
+    marginBottom: 8,
+  },
+  jubileeHeroSubtitle: {
+    fontSize: 13,
+    color: '#CBD5E1',
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  jubileeHeroDatesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  jubileeDatePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(248, 250, 252, 0.08)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#94A3B8',
+  },
+  jubileeDatePillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#F8FAFC',
+  },
+  jubileeDurationPill: {
+    backgroundColor: 'rgba(226, 232, 240, 0.12)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(226, 232, 240, 0.22)',
+    justifyContent: 'center',
+  },
+  jubileeDurationPillText: {
+    fontSize: 10.5,
+    color: '#CBD5E1',
+    fontWeight: '600',
+  },
+  jubileeTrackerCard: {
+    backgroundColor: '#161A23',
+    borderRadius: 14,
+    padding: 18,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    marginBottom: 18,
+    shadowColor: '#CBD5E1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  jubileeTrackerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  jubileeTrackerLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 0.8,
+  },
+  jubileeTrackerAmount: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    marginTop: 2,
+    letterSpacing: 0.5,
+  },
+  jubileeTargetBox: {
+    alignItems: 'flex-end',
+  },
+  jubileeTargetPercent: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#E2E8F0',
+  },
+  jubileeTargetLabel: {
+    fontSize: 10,
+    color: '#94A3B8',
+  },
+  jubileeProgressBarTrack: {
+    height: 7,
+    backgroundColor: '#272E3F',
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(226, 232, 240, 0.15)',
+  },
+  jubileeProgressBarFill: {
+    height: '100%',
+    backgroundColor: '#E2E8F0',
+    borderRadius: 4,
+  },
+  jubileeNextGoalText: {
+    fontSize: 12.5,
+    color: '#CBD5E1',
+    lineHeight: 19,
+    marginTop: 10,
+    fontWeight: '600',
+  },
+  milestoneCard: {
+    flexDirection: 'row',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 12,
+    gap: 12,
+  },
+  milestoneCardActive: {
+    backgroundColor: '#F1F5F9',
+    borderColor: '#94A3B8',
+    borderWidth: 1.5,
+  },
+  milestoneIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  milestoneHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 3,
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  milestoneTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  milestoneStatusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  badgeUnlocked: {
+    backgroundColor: '#E2E8F0',
+  },
+  badgeLocked: {
+    backgroundColor: '#F3F4F6',
+  },
+  milestoneStatusText: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  statusUnlockedText: {
+    color: '#0F172A',
+  },
+  statusLockedText: {
+    color: '#6B7280',
+  },
+  milestoneCriteria: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#475569',
+    marginBottom: 4,
+  },
+  milestoneDesc: {
+    fontSize: 12,
+    color: '#64748B',
+    lineHeight: 17,
+  },
+  jubileeInfoBox: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    marginTop: 6,
+    marginBottom: 20,
+  },
+  jubileeInfoTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 12,
+  },
+  jubileeInfoTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: 0.5,
+  },
+  jubileeFaqItem: {
+    marginBottom: 10,
+  },
+  faqQ: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginBottom: 2,
+  },
+  faqA: {
+    fontSize: 11,
+    color: '#64748B',
+    lineHeight: 16,
+  },
+  jubileeDashboardSection: {
+    marginTop: 18,
+    marginBottom: 10,
+  },
+  jubileePromoCard: {
+    backgroundColor: '#161A23',
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    shadowColor: '#E2E8F0',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.28,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  jubileePromoTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 12,
+  },
+  jubileeBadgePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 8,
+    paddingVertical: 3.5,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+  },
+  jubileeBadgePillText: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: '#0F172A',
+    letterSpacing: 0.8,
+  },
+  jubileeDateBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(248, 250, 252, 0.08)',
+    paddingHorizontal: 8,
+    paddingVertical: 3.5,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(203, 213, 225, 0.28)',
+  },
+  jubileeDatesText: {
+    fontSize: 10,
+    color: '#E2E8F0',
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  jubileeCardHeadline: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 5,
+    lineHeight: 21,
+  },
+  jubileeCardSub: {
+    fontSize: 11.5,
+    color: '#94A3B8',
+    lineHeight: 17,
+    marginBottom: 14,
+  },
+  jubileePillGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 7,
+    marginBottom: 14,
+  },
+  jubileeMilestonePill: {
+    flex: 1,
+    minWidth: '47%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#1E2330',
+    paddingVertical: 8,
+    paddingHorizontal: 9,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#2F374A',
+  },
+  jubileePillUnlocked: {
+    borderColor: '#E2E8F0',
+    backgroundColor: '#273042',
+    borderWidth: 1.2,
+  },
+  jubileePillEmoji: {
+    fontSize: 16,
+  },
+  jubileePillTitle: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  jubileePillSpend: {
+    fontSize: 9,
+    color: '#94A3B8',
+    fontWeight: '600',
+  },
+  jubileePromoFooterRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#282F3E',
+    paddingTop: 12,
+  },
+  jubileeSpendTrackerText: {
+    fontSize: 11.5,
+    color: '#CBD5E1',
+  },
+  jubileeViewBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+  },
+  jubileeViewBtnText: {
+    fontSize: 10.5,
+    fontWeight: '900',
+    color: '#0F172A',
   },
 });

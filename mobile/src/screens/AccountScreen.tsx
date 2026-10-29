@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
   Switch,
   RefreshControl,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -484,7 +485,16 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ onNavigateTab }) =
           <View style={styles.membershipCardSummary}>
             <View style={styles.membershipCardTop}>
               <View>
-                <Text style={styles.membershipCardBrand}>THE HUB • HUBKLUB</Text>
+                <View style={styles.membershipCardLogoRow}>
+                  <View style={styles.membershipCardLogoPill}>
+                    <Image
+                      source={require('../../assets/the_hub_logo.png')}
+                      style={styles.membershipCardLogo}
+                      resizeMode="contain"
+                    />
+                  </View>
+                  <Text style={styles.membershipCardBrand}>HUBKLUB</Text>
+                </View>
                 <Text style={styles.membershipCardTier}>
                   {isMember ? 'Gold Elite Membership' : 'Classic Membership'}
                 </Text>
@@ -1696,6 +1706,22 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
+  },
+  membershipCardLogoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  membershipCardLogoPill: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  membershipCardLogo: {
+    width: 50,
+    height: 16,
   },
   membershipCardBrand: {
     fontSize: 11,

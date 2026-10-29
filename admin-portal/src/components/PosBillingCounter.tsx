@@ -33,6 +33,19 @@ interface CustomerLookup {
   bonus_achieved: boolean;
   is_eligible: boolean;
   eligibility_message: string;
+  jubilee_scheme?: {
+    scheme_name: string;
+    start_date: string;
+    end_date: string;
+    is_active: boolean;
+    accumulated_spend: number;
+    event_pass_unlocked: boolean;
+    silver_coin_unlocked: boolean;
+    silver_ganesha_idol_unlocked: boolean;
+    surprise_gift_unlocked: boolean;
+    highest_unlocked_reward: string | null;
+    progress_percentage: number;
+  };
 }
 
 interface CompletedReceipt {
@@ -54,6 +67,15 @@ interface CompletedReceipt {
   new_balance_rupee_val: number;
   cashier: string;
   status: string;
+  jubilee_celebration?: {
+    period: string;
+    accumulated_spend: number;
+    event_pass_unlocked: boolean;
+    silver_coin_unlocked: boolean;
+    silver_ganesha_idol_unlocked: boolean;
+    surprise_gift_unlocked: boolean;
+    highest_reward: string | null;
+  };
 }
 
 interface PosBillingCounterProps {
@@ -168,8 +190,12 @@ export const PosBillingCounter: React.FC<PosBillingCounterProps> = ({
   const actualRedeemPts = Math.min(pointsToRedeem, maxPts);
   const netPayable = Math.max(0, grossNum - actualRedeemPts);
 
-  // Points to earn
-  const rate = netPayable >= 50000 ? 0.06 : netPayable >= 20000 ? 0.05 : 0.03;
+  // Points to earn — THE POINT THAT MATTERS
+  // Up To ₹ 20,000 -> 3% of invoice value
+  // ₹ 20,001 to ₹ 50,000 -> 5% of invoice value
+  // ₹ 50,001 and above -> 6% of invoice value
+  const rate = netPayable > 50000 ? 0.06 : netPayable > 20000 ? 0.05 : 0.03;
+  const slabLabel = netPayable > 50000 ? "6% of invoice value (₹ 50,001+)" : netPayable > 20000 ? "5% of invoice value (₹ 20,001 - ₹ 50,000)" : "3% of invoice value (Up to ₹ 20,000)";
   const pointsToEarn = Math.round(netPayable * rate);
 
   const handleProcessSale = async () => {
@@ -435,6 +461,91 @@ export const PosBillingCounter: React.FC<PosBillingCounterProps> = ({
                     </button>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* GO SILVER Celebration Scheme Strip in Silver Tone */}
+            {customer && customer.jubilee_scheme && (
+              <div
+                style={{
+                  marginTop: "0.6rem",
+                  padding: "0.75rem 1rem",
+                  background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+                  borderRadius: "8px",
+                  border: "1px solid #cbd5e1",
+                  color: "#ffffff",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.35rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <img
+                      src="/go_silver_logo.png"
+                      alt="GO SILVER"
+                      style={{ width: "24px", height: "24px", borderRadius: "50%", objectFit: "cover", border: "1px solid #cbd5e1" }}
+                    />
+                    <span style={{ fontSize: "0.8rem", fontWeight: "800", color: "#f1f5f9", letterSpacing: "0.5px" }}>
+                      Go silver (2027-2028)
+                    </span>
+                  </div>
+                  <span style={{ fontSize: "0.68rem", color: "#94a3b8" }}>
+                    Status: <strong style={{ color: "#38bdf8" }}>Upcoming (Starts 1 Jan 2027)</strong> • Accumulated: <strong style={{ color: "#f1f5f9" }}>₹{customer.jubilee_scheme.accumulated_spend.toLocaleString("en-IN")}</strong>
+                  </span>
+                </div>
+
+                <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginTop: "0.4rem" }}>
+                  <span
+                    style={{
+                      fontSize: "0.68rem",
+                      padding: "2px 6px",
+                      borderRadius: "4px",
+                      background: customer.jubilee_scheme.event_pass_unlocked ? "#065f46" : "rgba(255,255,255,0.1)",
+                      color: customer.jubilee_scheme.event_pass_unlocked ? "#6ee7b7" : "#94a3b8",
+                      fontWeight: "700",
+                    }}
+                  >
+                    🎟️ Event Pass {customer.jubilee_scheme.event_pass_unlocked ? "✓ Unlocked" : "(Spend > ₹50k in 2027-28)"}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "0.68rem",
+                      padding: "2px 6px",
+                      borderRadius: "4px",
+                      background: customer.jubilee_scheme.silver_coin_unlocked ? "#065f46" : "rgba(255,255,255,0.1)",
+                      color: customer.jubilee_scheme.silver_coin_unlocked ? "#6ee7b7" : "#94a3b8",
+                      fontWeight: "700",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "3px",
+                    }}
+                  >
+                    <img src="/go_silver_logo.png" alt="" style={{ width: "12px", height: "12px", borderRadius: "50%" }} />
+                    Silver Coin {customer.jubilee_scheme.silver_coin_unlocked ? "✓ Unlocked" : "(Spend > ₹1L in 2027-28)"}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "0.68rem",
+                      padding: "2px 6px",
+                      borderRadius: "4px",
+                      background: customer.jubilee_scheme.silver_ganesha_idol_unlocked ? "#065f46" : "rgba(255,255,255,0.1)",
+                      color: customer.jubilee_scheme.silver_ganesha_idol_unlocked ? "#6ee7b7" : "#94a3b8",
+                      fontWeight: "700",
+                    }}
+                  >
+                    🪔 Silver Ganesha {customer.jubilee_scheme.silver_ganesha_idol_unlocked ? "✓ Unlocked" : "(₹1L - ₹2L in 2027-28)"}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "0.68rem",
+                      padding: "2px 6px",
+                      borderRadius: "4px",
+                      background: customer.jubilee_scheme.surprise_gift_unlocked ? "#065f46" : "rgba(255,255,255,0.1)",
+                      color: customer.jubilee_scheme.surprise_gift_unlocked ? "#6ee7b7" : "#94a3b8",
+                      fontWeight: "700",
+                    }}
+                  >
+                    🎁 Surprise Gift {customer.jubilee_scheme.surprise_gift_unlocked ? "✓ Unlocked" : "(Spend > ₹2L in 2027-28)"}
+                  </span>
+                </div>
               </div>
             )}
           </div>
@@ -793,15 +904,46 @@ export const PosBillingCounter: React.FC<PosBillingCounterProps> = ({
             {/* Loyalty Statement */}
             <div style={{ background: "#fefce8", border: "1px solid #fef08a", borderRadius: "6px", padding: "0.7rem", marginBottom: "1.2rem", fontSize: "0.75rem" }}>
               <div style={{ fontWeight: "800", color: "#854d0e", marginBottom: "0.3rem" }}>
-                ★ HUBKLUB LOYALTY STATEMENT ★
+                ★ THE POINT THAT MATTERS • LOYALTY STATEMENT ★
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span>Points Earned Today:</span>
+                <span>Points Earned Today ({slabLabel}):</span>
                 <strong style={{ color: "#059669" }}>+{completedReceipt.points_earned_this_bill} pts</strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px dotted #fef08a", paddingTop: "0.3rem", marginTop: "0.3rem" }}>
                 <span>Total Available Balance:</span>
                 <strong style={{ color: "#b45309" }}>{completedReceipt.new_points_balance.toLocaleString("en-IN")} pts (₹{completedReceipt.new_balance_rupee_val})</strong>
+              </div>
+              <div style={{ fontSize: "0.68rem", color: "#a16207", marginTop: "0.35rem", borderTop: "1px dotted #fef08a", paddingTop: "0.25rem" }}>
+                Each point is equivalent to redemption of Rs. 1 • 2 Years Validity
+              </div>
+            </div>
+
+            {/* GO SILVER Celebration Notice */}
+            <div style={{ background: "#f8fafc", border: "1px dashed #94a3b8", borderRadius: "6px", padding: "0.65rem", marginBottom: "1.2rem", fontSize: "0.72rem" }}>
+              <div style={{ fontWeight: "800", color: "#0f172a", marginBottom: "0.3rem", display: "flex", alignItems: "center", gap: "6px" }}>
+                <img
+                  src="/go_silver_logo.png"
+                  alt="GO SILVER"
+                  style={{ width: "18px", height: "18px", borderRadius: "50%", objectFit: "cover", border: "1px solid #cbd5e1" }}
+                />
+                <span>Go silver (2027-2028)</span>
+                <span style={{ fontSize: "0.65rem", padding: "1px 6px", background: "#e0f2fe", color: "#0369a1", borderRadius: "4px", fontWeight: "700" }}>
+                  Upcoming
+                </span>
+              </div>
+              <div style={{ color: "#475569", fontSize: "0.68rem", lineHeight: "1.4" }}>
+                Scheme Period: 1st Jan 2027 to 1st Aug 2028 (Starts 1 Jan 2027)
+                <br />
+                • Purchases during the scheme window will accumulate toward:
+                <br />
+                • &gt; ₹50k Spend: GO SILVER VIP Event Pass
+                <br />
+                • &gt; ₹1L Spend: Certified 999 Pure Silver Coin
+                <br />
+                • ₹1L - ₹2L Spend: Pure Silver Lord Ganesha Idol
+                <br />
+                • &gt; ₹2L Spend: Grand Surprise Luxury Gift
               </div>
             </div>
 

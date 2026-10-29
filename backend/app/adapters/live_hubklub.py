@@ -60,10 +60,14 @@ class LiveHubklubAdapter(HubklubAdapterBase):
         return []
 
     def calculate_estimated_points_for_purchase(self, purchase_amount: float) -> int:
-        for band in settings.LOYALTY_RATE_BANDS:
-            if band["min"] <= purchase_amount <= band["max"]:
-                return int(round(purchase_amount * band["rate"]))
-        return int(round(purchase_amount * 0.03))
+        if purchase_amount <= 0:
+            return 0
+        if purchase_amount <= 20000.0:
+            return int(round(purchase_amount * 0.03))
+        elif purchase_amount <= 50000.0:
+            return int(round(purchase_amount * 0.05))
+        else:
+            return int(round(purchase_amount * 0.06))
 
     def validate_and_redeem_points(
         self, request: LoyaltyRedemptionRequest

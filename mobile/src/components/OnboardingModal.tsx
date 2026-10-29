@@ -35,7 +35,13 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
           />
           <View style={styles.splashOverlay}>
             <View style={styles.splashCenter}>
-              <Text style={styles.splashLogo}>T H E   H U B</Text>
+              <View style={styles.splashLogoCard}>
+                <Image
+                  source={require('../../assets/the_hub_logo.png')}
+                  style={styles.splashLogoImage}
+                  resizeMode="contain"
+                />
+              </View>
               <Text style={styles.splashTagline}>Style • Fashion • Lifestyle</Text>
             </View>
 
@@ -56,7 +62,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             <TouchableOpacity onPress={() => setStep('splash')} style={styles.topBtn}>
               <Ionicons name="sparkles-outline" size={20} color="#111111" />
             </TouchableOpacity>
-            <Text style={styles.brandTitle}>THE HUB</Text>
+            <Image
+              source={require('../../assets/the_hub_logo.png')}
+              style={styles.onboardingBrandLogo}
+              resizeMode="contain"
+            />
             <TouchableOpacity onPress={onClose} style={styles.topBtn}>
               <Ionicons name="close" size={22} color="#111111" />
             </TouchableOpacity>
@@ -142,6 +152,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  splashLogoCard: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 22,
+    paddingVertical: 14,
+    borderRadius: 14,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  splashLogoImage: {
+    width: 170,
+    height: 52,
+  },
   splashLogo: {
     fontSize: 32,
     fontWeight: '800',
@@ -183,6 +209,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     height: 50,
+  },
+  onboardingBrandLogo: {
+    width: 96,
+    height: 30,
   },
   topBtn: {
     padding: 6,

@@ -18,7 +18,7 @@ interface PointsCalculatorProps {
   isMember?: boolean;
 }
 
-const PRESET_AMOUNTS = [1000, 5000, 15000, 25000, 60000, 100000];
+const PRESET_AMOUNTS = [10000, 20000, 35000, 50000, 75000, 100000];
 
 export const PointsCalculator: React.FC<PointsCalculatorProps> = ({
   onPointsCredited,
@@ -47,15 +47,15 @@ export const PointsCalculator: React.FC<PointsCalculatorProps> = ({
           setCalculation(res);
         }
       } catch (err) {
-        // Local calculation fallback
+        // Local calculation fallback for THE POINT THAT MATTERS
         let rate = 0.03;
-        let slab = 'Up to ₹20,000 (3% Back)';
+        let slab = 'Up To ₹ 20,000 (3% of invoice value)';
         if (amount > 50000) {
           rate = 0.06;
-          slab = '₹50,001+ (6% Back)';
+          slab = '₹ 50,001 and above (6% of invoice value)';
         } else if (amount > 20000) {
           rate = 0.05;
-          slab = '₹20,001 to ₹50,000 (5% Back)';
+          slab = '₹ 20,001 to ₹ 50,000 (5% of invoice value)';
         }
         const base = Math.round(amount * rate);
         const bonus = amount >= 100000 ? Math.round(base * 0.2) : 0;
@@ -110,23 +110,23 @@ export const PointsCalculator: React.FC<PointsCalculatorProps> = ({
       {/* Header */}
       <View style={styles.headerRow}>
         <View style={styles.iconCircle}>
-          <Ionicons name="calculator-outline" size={20} color={COLORS.gold} />
+          <Ionicons name="sparkles" size={20} color={COLORS.gold} />
         </View>
         <View style={{ flex: 1 }}>
           <View style={styles.titleBadgeRow}>
-            <Text style={styles.title}>POINT COUNT CALCULATOR</Text>
+            <Text style={styles.title}>THE POINT THAT MATTERS</Text>
             <View style={styles.liveBadge}>
-              <Text style={styles.liveBadgeText}>INTERACTIVE</Text>
+              <Text style={styles.liveBadgeText}>CALCULATOR</Text>
             </View>
           </View>
           <Text style={styles.subtitle}>
-            Estimate exactly how many points you earn for any purchase
+            You earn points on every purchase • Rate applies per single invoice
           </Text>
         </View>
       </View>
 
       {/* Preset Amount Chips */}
-      <Text style={styles.inputLabel}>QUICK SELECT BILL AMOUNT</Text>
+      <Text style={styles.inputLabel}>QUICK SELECT SINGLE PURCHASE BILL AMOUNT</Text>
       <View style={styles.chipsRow}>
         {PRESET_AMOUNTS.map((val) => {
           const isSelected = amount === val;
@@ -157,7 +157,7 @@ export const PointsCalculator: React.FC<PointsCalculatorProps> = ({
             setAmountStr(txt.replace(/[^0-9]/g, ''));
             setCreditSuccessMsg(null);
           }}
-          placeholder="Enter purchase amount"
+          placeholder="Enter single purchase bill amount"
           keyboardType="numeric"
           maxLength={8}
         />

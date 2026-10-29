@@ -214,12 +214,43 @@ class HubklubAnnualBonusProgress(BaseModel):
     estimated_bonus_value_inr: float
     is_demo: bool = True
 
+# --- 25-Year Silver Jubilee Celebration Models (2027 - 2028) ---
+class JubileeRewardTier(BaseModel):
+    tier_id: str
+    min_spend: float
+    max_spend: Optional[float] = None
+    title: str
+    reward_name: str
+    description: str
+    icon: str
+    is_unlocked: bool = False
+    progress_percent: float = 0.0
+
+class JubileeSchemeProgress(BaseModel):
+    customer_id: str
+    scheme_name: str
+    start_date: str
+    end_date: str
+    accumulated_spend: float
+    unlocked_rewards: List[str] = []
+    event_pass_unlocked: bool = False
+    silver_coin_unlocked: bool = False
+    silver_ganesha_idol_unlocked: bool = False
+    surprise_gift_unlocked: bool = False
+    highest_unlocked_reward: Optional[str] = None
+    tiers: List[JubileeRewardTier]
+    next_reward: Optional[str] = None
+    amount_needed_for_next: float = 0.0
+    progress_percent: float = 0.0
+    is_demo: bool = True
+
 class HubklubSummary(BaseModel):
     membership: HubklubMembershipStatus
     balance: HubklubBalance
     annual_bonus: HubklubAnnualBonusProgress
     recent_transactions: List[PointsTransaction] = []
     active_rate_bands: List[Dict[str, Any]] = []
+    jubilee_scheme: Optional[JubileeSchemeProgress] = None
     is_demo: bool = True
 
 class LoyaltyEnrollmentRequest(BaseModel):

@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "23c89dd5-6220-48de-907a-167d5f088468"
+      }
+    },
+    "android": {
+      "package": "com.saniya05.hubklubworkspace"
+    }
+  }
+}

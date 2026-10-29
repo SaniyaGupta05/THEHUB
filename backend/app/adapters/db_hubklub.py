@@ -113,10 +113,14 @@ class DBHubklubAdapter(HubklubAdapterBase):
             db.close()
 
     def calculate_estimated_points_for_purchase(self, purchase_amount: float) -> int:
-        for band in settings.LOYALTY_RATE_BANDS:
-            if band["min"] <= purchase_amount <= band["max"]:
-                return int(round(purchase_amount * band["rate"]))
-        return int(round(purchase_amount * 0.03))
+        if purchase_amount <= 0:
+            return 0
+        if purchase_amount <= 20000.0:
+            return int(round(purchase_amount * 0.03))
+        elif purchase_amount <= 50000.0:
+            return int(round(purchase_amount * 0.05))
+        else:
+            return int(round(purchase_amount * 0.06))
 
     def get_membership_status(self, customer_id: str) -> HubklubMembershipStatus:
         db = SessionLocal()
@@ -518,6 +522,30 @@ class DBHubklubAdapter(HubklubAdapterBase):
                 status="Active",
             )
             db.add(tx)
+
+            # Annual Bonus check: On accumulated purchase of INR 1,00,000 and above, get 20% bonus of total points earned in the year
+            if c.annual_spend_current_year >= settings.LOYALTY_ANNUAL_BONUS_SPEND_THRESHOLD:
+                target_bonus = int(round((c.points_earned_current_year or 0) * settings.LOYALTY_ANNUAL_BONUS_MULTIPLIER))
+                current_awarded = c.annual_bonus_points or 0
+                delta_bonus = target_bonus - current_awarded
+                if delta_bonus > 0:
+                    c.available_points = (c.available_points or 0) + delta_bonus
+                    c.annual_bonus_points = target_bonus
+                    c.annual_bonus_awarded = True
+                    bonus_tx = DBPointsTransaction(
+                        id=f"tx_bonus_{uuid.uuid4().hex[:8]}",
+                        customer_id=customer_id,
+                        type="bonus",
+                        points=delta_bonus,
+                        rupee_equivalent=delta_bonus * settings.LOYALTY_POINT_RUPEE_VALUE,
+                        order_id=order_id,
+                        description=f"20% Annual Milestone Bonus (+{delta_bonus} pts) for ₹1,00,000+ accumulated spend",
+                        timestamp=now,
+                        expiry_date=expiry,
+                        status="Active",
+                    )
+                    db.add(bonus_tx)
+
             db.commit()
 
             return PointsTransaction(

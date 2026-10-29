@@ -9,6 +9,7 @@ from app.models.schemas import (
     LoyaltyEnrollmentRequest,
     LoyaltyRedemptionRequest,
     LoyaltyRedemptionResponse,
+    JubileeSchemeProgress,
 )
 from app.services.loyalty_service import loyalty_service
 from app.config import settings
@@ -124,14 +125,16 @@ def calculate_points_endpoint(
     cust = loyalty_service.get_customer(cid)
     current_annual_spend = cust.annual_spend_current_year if cust else 0.0
 
-    # Rate slab matching
-    rate = 0.03
-    slab_name = "Up to ₹20,000 (3% Back)"
-    for band in settings.LOYALTY_RATE_BANDS:
-        if band["min"] <= amount <= band["max"]:
-            rate = band["rate"]
-            slab_name = f"{band['rate']*100:.0f}% Back"
-            break
+    # Rate slab matching for "THE POINT THAT MATTERS"
+    if amount <= 20000.0:
+        rate = 0.03
+        slab_name = "Up To ₹ 20,000 (3% of invoice value)"
+    elif amount <= 50000.0:
+        rate = 0.05
+        slab_name = "₹ 20,001 to ₹ 50,000 (5% of invoice value)"
+    else:
+        rate = 0.06
+        slab_name = "₹ 50,001 and above (6% of invoice value)"
 
     base_points = int(round(amount * rate))
     rupee_val = base_points * settings.LOYALTY_POINT_RUPEE_VALUE
@@ -143,6 +146,8 @@ def calculate_points_endpoint(
     total_points = base_points + bonus_points
 
     return {
+        "scheme_name": "THE POINT THAT MATTERS",
+        "tagline": "You earn points on every purchase",
         "amount": amount,
         "rate_percent": round(rate * 100, 1),
         "slab_name": slab_name,
@@ -155,7 +160,54 @@ def calculate_points_endpoint(
         "bonus_points": bonus_points,
         "total_points": total_points,
         "total_rupee_value": total_points * settings.LOYALTY_POINT_RUPEE_VALUE,
+        "points_validity": "Accumulated points validity: 2 Years",
+        "redemption_rule": "Each point is equivelant to redemption of Rs. 1",
         "is_demo": True,
+    }
+
+@router.get("/scheme")
+def get_loyalty_scheme_details():
+    """
+    Returns exact scheme specifications for THE POINT THAT MATTERS.
+    """
+    return {
+        "title": "THE POINT THAT MATTERS",
+        "tagline": "You earn points on every purchase",
+        "single_purchase_rule": "Points rate slabs (3%, 5%, 6%) apply strictly per single purchase invoice amount. Invoices are evaluated individually.",
+        "tiers": [
+            {
+                "range": "Up To ₹ 20,000",
+                "rate": 0.03,
+                "rate_percent": 3,
+                "benefit": "Get 3% of invoice value",
+            },
+            {
+                "range": "₹ 20,001 to ₹ 50,000",
+                "rate": 0.05,
+                "rate_percent": 5,
+                "benefit": "Get 5% of invoice value",
+            },
+            {
+                "range": "₹ 50,001 and above",
+                "rate": 0.06,
+                "rate_percent": 6,
+                "benefit": "Get 6% of invoice value",
+            },
+        ],
+        "annual_bonus": {
+            "threshold_inr": 100000.0,
+            "bonus_multiplier": 0.20,
+            "description": "On accumalated purchase of INR 1,00,000 and above, you get 20% bonus of the total points earned in the year",
+        },
+        "redemption": {
+            "rupee_equivalent_per_point": 1.0,
+            "description": "Each point is equivelant to redemption of Rs. 1",
+        },
+        "validity": {
+            "years": 2,
+            "days": 730,
+            "description": "Accumulated points validity: 2 Years",
+        },
     }
 
 @router.post("/simulate-credit")
@@ -182,5 +234,58 @@ def simulate_credit_endpoint(
         "transaction": tx,
         "updated_balance": summary.balance.available_points,
         "summary": summary,
+    }
+
+@router.get("/jubilee", response_model=JubileeSchemeProgress)
+def get_customer_jubilee_progress(x_customer_id: Optional[str] = Header(None)):
+    """
+    Returns current customer's 25-Year Silver Jubilee Scheme progress (2027 - 2028).
+    Tracks accumulated purchase toward Celebration Event Pass, Silver Coin,
+    Silver Ganesha Idol, and Exclusive Surprise Gift.
+    """
+    cid = get_active_customer_id(x_customer_id)
+    return loyalty_service.get_jubilee_progress(cid)
+
+@router.get("/jubilee/rules")
+def get_jubilee_scheme_rules():
+    """
+    Official terms and tiers for The HUB 25th Silver Jubilee Celebration (2028).
+    Active Period: 1st Jan 2027 to 1st Aug 2028.
+    """
+    return {
+        "scheme_name": "The HUB 25th Silver Jubilee Celebration (2028)",
+        "occasion": "Celebrating 25 Glorious Years of The HUB (2003 - 2028)",
+        "active_period": {
+            "start_date": "1st January 2027",
+            "end_date": "1st August 2028",
+            "duration_months": 19,
+        },
+        "basis": "Accumulated purchases made between 1st Jan 2027 and 1st Aug 2028",
+        "tiers": [
+            {
+                "tier": "Tier 1: Event Pass",
+                "eligibility": "Accumulated purchase more than ₹50,000",
+                "reward": "Exclusive Invitation / Pass to attend the 25-Year Silver Jubilee Mega Celebration Event",
+                "badge": "25th Jubilee VIP Pass",
+            },
+            {
+                "tier": "Tier 2: Pure Silver Coin",
+                "eligibility": "Accumulated purchase more than ₹1,00,000",
+                "reward": "Certified 25th Anniversary Commemorative Pure Silver Coin",
+                "badge": "Silver Coin",
+            },
+            {
+                "tier": "Tier 3: Silver Ganesha Idol",
+                "eligibility": "Accumulated purchase between ₹1,00,000 and ₹2,00,000",
+                "reward": "Auspicious Handcrafted Pure Silver Lord Ganesha Idol (Upgraded Gift)",
+                "badge": "Silver Ganesha Idol",
+            },
+            {
+                "tier": "Tier 4: Grand Surprise Gift",
+                "eligibility": "Accumulated purchase more than ₹2,00,000",
+                "reward": "Exclusive Grand Surprise Luxury Gift Hamper + VIP Celebration Hospitality",
+                "badge": "Surprise Luxury Gift",
+            },
+        ],
     }
 

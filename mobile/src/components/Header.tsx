@@ -36,8 +36,13 @@ export const Header: React.FC<HeaderProps> = ({
             style={styles.brandContainer}
             onPress={onOnboardingPress}
             activeOpacity={0.8}
+            accessibilityLabel="THE HUB Logo"
           >
-            <Text style={styles.brandTitle}>THE HUB</Text>
+            <Image
+              source={require('../../assets/the_hub_logo.png')}
+              style={styles.brandLogo}
+              resizeMode="contain"
+            />
           </TouchableOpacity>
         )}
         {title && showBack && <Text style={styles.headerTitle}>{title}</Text>}
@@ -81,7 +86,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   brandContainer: {
-    paddingVertical: 4,
+    paddingVertical: 2,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+  },
+  brandLogo: {
+    width: 98,
+    height: 32,
   },
   brandTitle: {
     fontSize: 18,

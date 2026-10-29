@@ -156,6 +156,7 @@ def lookup_customer_at_counter(req: BillingLookupRequest):
             "bonus_achieved": summary.annual_bonus.bonus_achieved,
             "is_eligible": summary.membership.is_eligible,
             "eligibility_message": summary.membership.eligibility_message,
+            "jubilee_scheme": summary.jubilee_scheme.model_dump() if summary.jubilee_scheme else None,
         }
 
     # If customer is not found in database, check digits
@@ -245,6 +246,15 @@ def process_billing_counter_invoice(req: ProcessInvoiceRequest):
         "new_balance_rupee_val": summary.balance.redemption_value_inr,
         "cashier": "Kavita Sharma (Spentha Counter 01)",
         "status": "COMPLETED & TALLY SYNCED",
+        "jubilee_celebration": {
+            "period": f"{summary.jubilee_scheme.start_date} to {summary.jubilee_scheme.end_date}" if summary.jubilee_scheme else "1 Jan 2027 - 1 Aug 2028",
+            "accumulated_spend": summary.jubilee_scheme.accumulated_spend if summary.jubilee_scheme else 0.0,
+            "event_pass_unlocked": summary.jubilee_scheme.event_pass_unlocked if summary.jubilee_scheme else False,
+            "silver_coin_unlocked": summary.jubilee_scheme.silver_coin_unlocked if summary.jubilee_scheme else False,
+            "silver_ganesha_idol_unlocked": summary.jubilee_scheme.silver_ganesha_idol_unlocked if summary.jubilee_scheme else False,
+            "surprise_gift_unlocked": summary.jubilee_scheme.surprise_gift_unlocked if summary.jubilee_scheme else False,
+            "highest_reward": summary.jubilee_scheme.highest_unlocked_reward if summary.jubilee_scheme else None,
+        } if summary.jubilee_scheme else None,
     }
 
     IN_STORE_INVOICES.insert(0, receipt)

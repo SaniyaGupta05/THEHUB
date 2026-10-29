@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from typing import List, Dict
+from typing import List, Dict, Any
 import os
 
 class LoyaltyRateBand(BaseSettings):
@@ -31,14 +31,15 @@ class Settings(BaseSettings):
     # Eligibility requirement: one-time purchase of ₹1,000 or more
     LOYALTY_ELIGIBILITY_MIN_SINGLE_PURCHASE: float = 1000.0
 
-    # Points earning rate bands:
-    # Up to ₹20,000 -> 3%
-    # ₹20,001 to ₹50,000 -> 5%
-    # ₹50,001 and above -> 6%
-    LOYALTY_RATE_BANDS: List[Dict[str, float]] = [
-        {"min": 0.0, "max": 20000.0, "rate": 0.03},
-        {"min": 20000.01, "max": 50000.0, "rate": 0.05},
-        {"min": 50000.01, "max": float("inf"), "rate": 0.06},
+    # THE POINT THAT MATTERS
+    # Slabs apply strictly on a SINGLE PURCHASE of these amounts (per invoice):
+    # Up To ₹ 20,000 -> 3% of invoice value (single purchase)
+    # ₹ 20,001 to ₹ 50,000 -> 5% of invoice value (single purchase)
+    # ₹ 50,001 and above -> 6% of invoice value (single purchase)
+    LOYALTY_RATE_BANDS: List[Dict[str, Any]] = [
+        {"min": 0.0, "max": 20000.0, "rate": 0.03, "range": "Up To ₹ 20,000", "benefit": "Get 3% of invoice value (single purchase)"},
+        {"min": 20000.01, "max": 50000.0, "rate": 0.05, "range": "₹ 20,001 to ₹ 50,000", "benefit": "Get 5% of invoice value (single purchase)"},
+        {"min": 50000.01, "max": float("inf"), "rate": 0.06, "range": "₹ 50,001 and above", "benefit": "Get 6% of invoice value (single purchase)"},
     ]
 
     # Annual bonus rule: ₹1,00,000 accumulated spending in a year -> 20% bonus of points earned in that year
@@ -50,6 +51,17 @@ class Settings(BaseSettings):
 
     # Validity rule: Accumulated points valid for 2 years (730 days)
     LOYALTY_POINTS_EXPIRY_DAYS: int = 730
+
+    # 25-Year GO SILVER Celebration Scheme (2028 Milestone)
+    # Active Period: 1st Jan 2027 to 1st Aug 2028
+    # Based on accumulated purchase during this celebration window
+    JUBILEE_SCHEME_NAME: str = "The HUB GO SILVER 25th Year Celebration (2028)"
+    JUBILEE_SCHEME_START_DATE: str = "2027-01-01"
+    JUBILEE_SCHEME_END_DATE: str = "2028-08-01"
+    JUBILEE_EVENT_PASS_MIN_SPEND: float = 50000.0
+    JUBILEE_SILVER_COIN_MIN_SPEND: float = 100000.0
+    JUBILEE_SILVER_GANESHA_MAX_SPEND: float = 200000.0
+    JUBILEE_SURPRISE_GIFT_MIN_SPEND: float = 200000.01
 
     class Config:
         env_file = ".env"

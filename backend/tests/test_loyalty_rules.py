@@ -39,7 +39,7 @@ def test_eligibility_met_and_enrollment(client):
 
 # Test Case 3: Points rate calculations at each published rate: 3%, 5%, 6%
 def test_rate_bands_3_5_6_percent():
-    # Band 1: Up to ₹20,000 -> 3%
+    # Band 1: Up to ₹ 20,000 -> 3% of invoice value
     # e.g. ₹10,000 -> 300 points
     pts_tier1 = loyalty_service.calculate_points_for_spend(10000.0)
     assert pts_tier1 == 300
@@ -47,15 +47,57 @@ def test_rate_bands_3_5_6_percent():
     # e.g. ₹15,195 (Prithvi Kurta) -> 456 points (round(15195 * 0.03))
     assert loyalty_service.calculate_points_for_spend(15195.0) == 456
 
-    # Band 2: ₹20,001 to ₹50,000 -> 5%
+    # Exact boundary: ₹20,000 -> 600 points (3%)
+    assert loyalty_service.calculate_points_for_spend(20000.0) == 600
+
+    # Band 2: ₹ 20,001 to ₹ 50,000 -> 5% of invoice value
+    # Boundary: ₹20,001 -> 1,000 points (5%)
+    assert loyalty_service.calculate_points_for_spend(20001.0) == 1000
+
     # e.g. ₹24,500 (Golden Horizon Bandi Set) -> 1225 points
     pts_tier2 = loyalty_service.calculate_points_for_spend(24500.0)
     assert pts_tier2 == 1225
 
-    # Band 3: ₹50,001 and above -> 6%
+    # Boundary: ₹50,000 -> 2,500 points (5%)
+    assert loyalty_service.calculate_points_for_spend(50000.0) == 2500
+
+    # Band 3: ₹ 50,001 and above -> 6% of invoice value
+    # Boundary: ₹50,001 -> 3,000 points (6%)
+    assert loyalty_service.calculate_points_for_spend(50001.0) == 3000
+
     # e.g. ₹68,000 (Royal Ivory Sherwani) -> 4080 points
     pts_tier3 = loyalty_service.calculate_points_for_spend(68000.0)
     assert pts_tier3 == 4080
+
+    # ₹1,00,000 -> 6,000 points (6%)
+    assert loyalty_service.calculate_points_for_spend(100000.0) == 6000
+
+# Test Case 3b: Rate slabs apply strictly per single purchase invoice
+def test_single_purchase_rate_basis():
+    # Two independent purchases of ₹15,000 each:
+    # Each single invoice is <= ₹20,000 -> earns 3% (450 pts each = 900 total)
+    pts_bill1 = loyalty_service.calculate_points_for_spend(15000.0)
+    pts_bill2 = loyalty_service.calculate_points_for_spend(15000.0)
+    assert pts_bill1 == 450
+    assert pts_bill2 == 450
+    assert pts_bill1 + pts_bill2 == 900
+
+    # In contrast, a SINGLE purchase of ₹30,000:
+    # Single invoice is ₹30,000 (falls in ₹20,001 - ₹50,000) -> earns 5% (1,500 pts)
+    pts_single_30k = loyalty_service.calculate_points_for_spend(30000.0)
+    assert pts_single_30k == 1500
+    assert pts_single_30k > (pts_bill1 + pts_bill2)
+
+    # Similarly, two single purchases of ₹30,000 each:
+    # Each single invoice is ₹30,000 -> earns 5% (1,500 pts each = 3,000 total)
+    pts_two_30k = loyalty_service.calculate_points_for_spend(30000.0) * 2
+    assert pts_two_30k == 3000
+
+    # Whereas a SINGLE purchase of ₹60,000:
+    # Single invoice is ₹60,000 (falls in ₹50,001+) -> earns 6% (3,600 pts)
+    pts_single_60k = loyalty_service.calculate_points_for_spend(60000.0)
+    assert pts_single_60k == 3600
+    assert pts_single_60k > pts_two_30k
 
 # Test Case 4: Customer below ₹1,00,000 annual spending threshold
 def test_annual_bonus_below_threshold(client):
@@ -142,3 +184,25 @@ def test_duplicate_redemption_idempotency(client):
     data2 = res2.json()
     assert data2["transaction_id"] == data1["transaction_id"]
     assert data2["remaining_points"] == data1["remaining_points"]
+
+# Test Case 10: 25-Year Silver Jubilee Celebration Scheme (2027 - 2028)
+def test_jubilee_celebration_scheme(client):
+    headers = {"X-Customer-Id": "cust_demo"}
+    res = client.get("/api/v1/loyalty/jubilee", headers=headers)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["scheme_name"] == "The HUB GO SILVER 25th Year Celebration (2028)"
+    assert data["start_date"] == "1st Jan 2027"
+    assert data["end_date"] == "1st Aug 2028"
+    assert data["accumulated_spend"] >= 100000.0
+
+    # For cust_demo (₹1,15,595 spend):
+    # - > ₹50,000: Event pass unlocked
+    # - > ₹1,00,000: Silver coin unlocked
+    # - ₹1,00,000 - ₹2,00,000: Silver Ganesha Idol unlocked
+    tier_map = {t["tier_id"]: t for t in data["tiers"]}
+    assert tier_map["event_pass"]["is_unlocked"] is True
+    assert tier_map["silver_coin"]["is_unlocked"] is True
+    assert tier_map["silver_ganesha"]["is_unlocked"] is True
+    assert tier_map["surprise_gift"]["is_unlocked"] is False
+    assert data["amount_needed_for_next"] > 0  # Needs spend to reach >₹2L for surprise gift

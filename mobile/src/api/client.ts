@@ -9,6 +9,8 @@ import {
   HubklubBalance,
   HubklubSummary,
   PointsTransaction,
+  JubileeRewardTier,
+  JubileeSchemeProgress,
 } from '../types';
 
 export const DATASET_PROFILES: CustomerProfile[] = [
@@ -705,6 +707,14 @@ class ApiClient {
     });
   }
 
+  async getJubileeProgress(): Promise<JubileeSchemeProgress> {
+    return this.request<JubileeSchemeProgress>('/loyalty/jubilee');
+  }
+
+  async getJubileeRules(): Promise<any> {
+    return this.request<any>('/loyalty/jubilee/rules');
+  }
+
   // Graceful offline fallback simulator
   private fallbackHandler<T>(endpoint: string, options: RequestInit): Promise<T> {
     const cid = this.customerId;
@@ -809,13 +819,13 @@ class ApiClient {
       const match = endpoint.match(/amount=([\d.]+)/);
       const amt = match ? parseFloat(match[1]) : 0;
       let rate = 0.03;
-      let slab = 'Up to ₹20,000 (3% Back)';
+      let slab = 'Up To ₹ 20,000 (3% of invoice value)';
       if (amt > 50000) {
         rate = 0.06;
-        slab = '₹50,001+ (6% Back)';
+        slab = '₹ 50,001 and above (6% of invoice value)';
       } else if (amt > 20000) {
         rate = 0.05;
-        slab = '₹20,001 to ₹50,000 (5% Back)';
+        slab = '₹ 20,001 to ₹ 50,000 (5% of invoice value)';
       }
       const basePts = Math.round(amt * rate);
       const annualSpendBefore = isGold ? 115595 : cid === 'cust_below_bonus' ? 45000 : 850;
@@ -848,6 +858,74 @@ class ApiClient {
         success: true,
         credited_points: pts,
         updated_balance: (isGold ? 3450 : 0) + pts,
+        is_demo: true,
+      } as unknown as T);
+    }
+
+    if (endpoint.includes('/loyalty/jubilee')) {
+      // The GO SILVER 25th Year Celebration Scheme is scheduled from 1st Jan 2027 to 1st Aug 2028.
+      // The event has not started yet, so current accumulated spend in the scheme is ₹0 and all rewards are locked.
+      const spend = 0;
+      const tiers: JubileeRewardTier[] = [
+        {
+          tier_id: 'event_pass',
+          min_spend: 50000,
+          title: 'GO SILVER Celebration Event Pass',
+          reward_name: 'GO SILVER VIP Event Entry',
+          description: "Exclusive pass to attend The HUB's 25-Year GO SILVER Celebration Event in 2028",
+          icon: 'ticket',
+          is_unlocked: false,
+          progress_percent: 0,
+        },
+        {
+          tier_id: 'silver_coin',
+          min_spend: 100000,
+          title: 'GO SILVER Pure Silver Coin',
+          reward_name: 'GO SILVER Pure Silver Coin',
+          description: 'Certified 999 pure silver coin hallmarked for purchases more than ₹1 Lakh during 2027-2028',
+          icon: 'disc',
+          is_unlocked: false,
+          progress_percent: 0,
+        },
+        {
+          tier_id: 'silver_ganesha',
+          min_spend: 100000,
+          max_spend: 200000,
+          title: 'GO SILVER Lord Ganesha Idol',
+          reward_name: 'GO SILVER Pure Silver Ganesha Idol',
+          description: 'Auspicious handcrafted pure silver Lord Ganesha idol for purchases between ₹1 Lakh and ₹2 Lakh during 2027-2028',
+          icon: 'sparkles',
+          is_unlocked: false,
+          progress_percent: 0,
+        },
+        {
+          tier_id: 'surprise_gift',
+          min_spend: 200000.01,
+          title: 'GO SILVER Surprise Luxury Gift',
+          reward_name: 'GO SILVER Grand Surprise Gift',
+          description: 'Bespoke grand luxury surprise gift hamper for purchases more than ₹2 Lakh during 2027-2028',
+          icon: 'gift',
+          is_unlocked: false,
+          progress_percent: 0,
+        },
+      ];
+
+      return Promise.resolve({
+        customer_id: cid,
+        scheme_name: 'The HUB Go Silver (2027-2028)',
+        start_date: '1st Jan 2027',
+        end_date: '1st Aug 2028',
+        accumulated_spend: 0,
+        unlocked_rewards: [],
+        event_pass_unlocked: false,
+        silver_coin_unlocked: false,
+        silver_ganesha_idol_unlocked: false,
+        surprise_gift_unlocked: false,
+        highest_unlocked_reward: null,
+        tiers,
+        next_reward: 'GO SILVER Celebration Event Pass (Starts 1 Jan 2027)',
+        amount_needed_for_next: 50000,
+        progress_percent: 0,
         is_demo: true,
       } as unknown as T);
     }
